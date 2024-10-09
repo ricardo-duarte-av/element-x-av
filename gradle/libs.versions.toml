@@ -25,7 +25,7 @@ media3 = "1.4.1"
 camera = "1.3.4"
 
 # Compose
-compose_bom = "2024.09.02"
+compose_bom = "2024.09.03"
 composecompiler = "1.5.15"
 
 # Coroutines
@@ -40,7 +40,7 @@ test_core = "1.6.1"
 #other
 coil = "2.7.0"
 datetime = "0.6.0"
-dependencyAnalysis = "2.1.3"
+dependencyAnalysis = "2.1.4"
 serialization_json = "1.6.3"
 showkase = "1.0.3"
 appyx = "1.4.0"
@@ -103,7 +103,7 @@ androidx_activity_activity = { module = "androidx.activity:activity", version.re
 androidx_activity_compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidx_startup = "androidx.startup:startup-runtime:1.2.0"
 androidx_preference = "androidx.preference:preference:1.2.1"
-androidx_webkit = "androidx.webkit:webkit:1.12.0"
+androidx_webkit = "androidx.webkit:webkit:1.12.1"
 
 androidx_compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose_bom" }
 androidx_compose_material3 = { module = "androidx.compose.material3:material3" }
@@ -143,7 +143,7 @@ test_corektx = { module = "androidx.test:core-ktx", version.ref = "test_core" }
 test_arch_core = "androidx.arch.core:core-testing:2.2.0"
 test_junit = "junit:junit:4.13.2"
 test_runner = "androidx.test:runner:1.6.2"
-test_mockk = "io.mockk:mockk:1.13.12"
+test_mockk = "io.mockk:mockk:1.13.13"
 test_konsist = "com.lemonappdev:konsist:0.16.1"
 test_turbine = "app.cash.turbine:turbine:1.1.0"
 test_truth = "com.google.truth:truth:1.4.4"
@@ -195,7 +195,7 @@ sentry = "io.sentry:sentry-android:7.14.0"
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.25.0"
 
 # Emojibase
-matrix_emojibase_bindings = "io.element.android:emojibase-bindings:1.1.3"
+matrix_emojibase_bindings = "io.element.android:emojibase-bindings:1.3.3"
 sigpwned_emoji4j = "com.sigpwned:emoji4j-core:15.1.2"
 
 # Di
