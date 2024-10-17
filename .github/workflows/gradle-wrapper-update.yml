@@ -9,7 +9,7 @@ jobs:
   update-gradle-wrapper:
     runs-on: ubuntu-latest
     # Skip in forks
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'daedric7/element-x-daedricnet' }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'ricardo-duarte-av/element-x-av' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
