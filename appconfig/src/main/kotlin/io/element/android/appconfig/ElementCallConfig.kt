@@ -11,7 +11,7 @@ object ElementCallConfig {
     /**
      * The default base URL for the Element Call service.
      */
-    const val DEFAULT_BASE_URL = "https://call.daedric.net"
+    const val DEFAULT_BASE_URL = "https://call.aguiarvieira.pt"
 
     /**
      * The default duration of a ringing call in seconds before it's automatically dismissed.
