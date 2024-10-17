@@ -46,7 +46,7 @@ android {
         applicationId = if (isEnterpriseBuild) {
             "io.element.enterprise"
         } else {
-            "net.daedric.element"
+            "pt.aguiarvieira.element"
         }
         targetSdk = Versions.targetSdk
         versionCode = Versions.versionCode
