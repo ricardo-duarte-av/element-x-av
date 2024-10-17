@@ -52,7 +52,7 @@ jobs:
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           server: "https://aguiarvieira.pt"
           file: app/build/outputs/apk/gplay/nightly/app-gplay-arm64-v8a-nightly.apk
-          message: "Build Complete"
+          message: "DaedricNET Element X Build Complete"
 
       - name: Deploy Nightly
         uses: WebFreak001/deploy-nightly@v3.1.0
