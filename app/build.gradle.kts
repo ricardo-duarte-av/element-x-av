@@ -100,7 +100,7 @@ android {
     val baseAppName = if (isEnterpriseBuild) {
         "Element Enterprise"
     } else {
-        "Daedric.NET X"
+        "AguiarVieira X"
     }
     logger.warnInBox("Building $baseAppName")
 
