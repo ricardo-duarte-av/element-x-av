@@ -8,7 +8,7 @@
 package io.element.android.appconfig
 
 object AuthenticationConfig {
-    const val MATRIX_ORG_URL = "https://daedric.net"
+    const val MATRIX_ORG_URL = "https://aguiarvieira.pt"
 
     /**
      * Default homeserver url to sign in with, unless the user selects a different one.
