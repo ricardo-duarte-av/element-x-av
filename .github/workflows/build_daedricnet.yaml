@@ -1,4 +1,4 @@
-name: Create and Release AV Nightly
+name: Create and Release DaedricNET nightly
 on:
   # This can be used to automatically publish nightlies at UTC nighttime
   schedule:
