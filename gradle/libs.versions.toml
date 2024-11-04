@@ -18,14 +18,14 @@ core = "1.13.1"
 # Stick to 1.0.0 for now, and ensure that this scenario cannot be reproduced when upgrading the version.
 datastore = "1.0.0"
 constraintlayout = "2.1.4"
-constraintlayout_compose = "1.0.1"
+constraintlayout_compose = "1.1.0"
 lifecycle = "2.8.6"
 activity = "1.9.3"
 media3 = "1.4.1"
 camera = "1.4.0"
 
 # Compose
-compose_bom = "2024.10.00"
+compose_bom = "2024.10.01"
 composecompiler = "1.5.15"
 
 # Coroutines
@@ -50,7 +50,7 @@ wysiwyg = "2.37.13"
 telephoto = "0.13.0"
 
 # Dependency analysis
-dependencyAnalysis = "2.4.0"
+dependencyAnalysis = "2.4.2"
 
 # DI
 dagger = "2.52"
