@@ -46,14 +46,15 @@ jobs:
             app/build/outputs/apk/gplay/nightly/app-gplay-arm64-v8a-nightly.apk
 
       - name: Send to Matrix
-        uses: daedric7/Matrix-Send-File@v0.2-beta6
+        uses: daedric7/Matrix-Send-File@v0.3
         with:
           room_id: ${{ secrets.MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           server: "https://aguiarvieira.pt"
           file: app/build/outputs/apk/gplay/nightly/app-gplay-arm64-v8a-nightly.apk
           message: "DaedricNET Element X Build Complete"
-
+          filename: "DaedricNET Element X Nightly.apk"
+          
       - name: Deploy Nightly
         uses: WebFreak001/deploy-nightly@v3.1.0
         with:
