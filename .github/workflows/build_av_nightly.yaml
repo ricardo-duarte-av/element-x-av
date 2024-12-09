@@ -32,7 +32,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
       - name: Create app bundle
         env:
-          ELEMENT_ANDROID_MAPTILER_API_KEY: 'y2pJp6r8fSjQHnFpYNKH'
+          ELEMENT_ANDROID_MAPTILER_API_KEY: 'xM0m5aJZr9xRVpDGcOxB'
           ELEMENT_ANDROID_MAPTILER_LIGHT_MAP_ID: 'streets-v2'
           ELEMENT_ANDROID_MAPTILER_DARK_MAP_ID: 'streets-v2-dark'
           ELEMENT_ANDROID_NIGHTLY_KEYPASSWORD: '12345678'
