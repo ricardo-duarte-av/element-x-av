@@ -235,7 +235,7 @@ class RustMatrixRoom(
                     RoomMessageEventMessageType.VIDEO,
                     RoomMessageEventMessageType.AUDIO,
                 ),
-                dateDividerMode = DateDividerMode.DAILY,
+                dateDividerMode = DateDividerMode.MONTHLY,
             ).let { inner ->
                 createTimeline(inner, mode = Timeline.Mode.MEDIA)
             }
@@ -566,6 +566,12 @@ class RustMatrixRoom(
             if (blockUserId != null) {
                 innerRoom.ignoreUser(blockUserId.value)
             }
+        }
+    }
+
+    override suspend fun clearEventCacheStorage(): Result<Unit> = withContext(roomDispatcher) {
+        runCatching {
+            innerRoom.clearEventCacheStorage()
         }
     }
 
