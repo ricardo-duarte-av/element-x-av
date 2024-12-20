@@ -35,12 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.architecture.Presenter
+import io.element.android.libraries.designsystem.background.OnboardingBackground
 import io.element.android.libraries.designsystem.components.BigIcon
 import io.element.android.libraries.designsystem.components.PageTitle
 import io.element.android.libraries.designsystem.components.async.AsyncFailure
@@ -92,6 +94,8 @@ fun MediaGalleryView(
                     Text(
                         text = state.roomName,
                         style = ElementTheme.typography.aliasScreenTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 navigationIcon = {
@@ -106,7 +110,8 @@ fun MediaGalleryView(
             modifier = Modifier
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues)
-                .fillMaxSize()
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
@@ -151,6 +156,12 @@ fun MediaGalleryView(
                 onViewInTimeline = { eventId ->
                     state.eventSink(MediaGalleryEvents.ViewInTimeline(eventId))
                 },
+                onShare = { eventId ->
+                    state.eventSink(MediaGalleryEvents.Share(eventId))
+                },
+                onDownload = { eventId ->
+                    state.eventSink(MediaGalleryEvents.SaveOnDisk(eventId))
+                },
                 onDelete = { eventId ->
                     state.eventSink(
                         MediaGalleryEvents.ConfirmDelete(
@@ -185,30 +196,44 @@ private fun MediaGalleryPage(
     state: MediaGalleryState,
     onItemClick: (MediaItem.Event) -> Unit,
 ) {
-    when (val groupedMediaItems = state.groupedMediaItems) {
-        AsyncData.Uninitialized,
-        is AsyncData.Loading -> {
-            LoadingContent(mode)
-        }
-        is AsyncData.Success -> {
-            when (mode) {
-                MediaGalleryMode.Images -> MediaGalleryImages(
-                    imagesAndVideos = groupedMediaItems.data.imageAndVideoItems,
-                    eventSink = state.eventSink,
-                    onItemClick = onItemClick,
-                )
-                MediaGalleryMode.Files -> MediaGalleryFiles(
-                    files = groupedMediaItems.data.fileItems,
-                    eventSink = state.eventSink,
-                    onItemClick = onItemClick,
+    val groupedMediaItems = state.groupedMediaItems
+    if (groupedMediaItems.isLoadingItems(mode)) {
+        LoadingContent(mode)
+    } else {
+        when (groupedMediaItems) {
+            is AsyncData.Success -> {
+                when (mode) {
+                    MediaGalleryMode.Images -> MediaGalleryImages(
+                        imagesAndVideos = groupedMediaItems.data.imageAndVideoItems,
+                        eventSink = state.eventSink,
+                        onItemClick = onItemClick,
+                    )
+                    MediaGalleryMode.Files -> MediaGalleryFiles(
+                        files = groupedMediaItems.data.fileItems,
+                        eventSink = state.eventSink,
+                        onItemClick = onItemClick,
+                    )
+                }
+            }
+            is AsyncData.Failure -> {
+                ErrorContent(
+                    error = groupedMediaItems.error,
                 )
             }
+            else -> Unit
         }
-        is AsyncData.Failure -> {
-            ErrorContent(
-                error = groupedMediaItems.error,
-            )
-        }
+    }
+}
+
+/**
+ * Return true when the timeline is not loaded or if it contains only a single loading item.
+ */
+private fun AsyncData<GroupedMediaItems>.isLoadingItems(mode: MediaGalleryMode): Boolean {
+    return when (this) {
+        AsyncData.Uninitialized,
+        is AsyncData.Loading -> true
+        is AsyncData.Success -> data.getItems(mode).singleOrNull() is MediaItem.LoadingIndicator
+        is AsyncData.Failure -> false
     }
 }
 
@@ -274,11 +299,17 @@ private fun MediaGalleryFilesList(
                     modifier = Modifier.animateItem(),
                     file = item,
                     onClick = { onItemClick(item) },
+                    onLongClick = {
+                        eventSink(MediaGalleryEvents.OpenInfo(item))
+                    },
                 )
                 is MediaItem.Audio -> AudioItemView(
                     modifier = Modifier.animateItem(),
                     audio = item,
                     onClick = { onItemClick(item) },
+                    onLongClick = {
+                        eventSink(MediaGalleryEvents.OpenInfo(item))
+                    },
                 )
                 is MediaItem.Voice -> {
                     val presenter: Presenter<VoiceMessageState> = presenterFactories.rememberPresenter(item)
@@ -286,9 +317,9 @@ private fun MediaGalleryFilesList(
                         modifier = Modifier.animateItem(),
                         state = presenter.present(),
                         voice = item,
-                        onShareClick = { eventSink(MediaGalleryEvents.Share(item)) },
-                        onDownloadClick = { eventSink(MediaGalleryEvents.SaveOnDisk(item)) },
-                        onInfoClick = { eventSink(MediaGalleryEvents.OpenInfo(item)) },
+                        onLongClick = {
+                            eventSink(MediaGalleryEvents.OpenInfo(item))
+                        },
                     )
                 }
                 is MediaItem.DateSeparator -> DateItemView(
@@ -426,6 +457,7 @@ private fun EmptyContent(
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
+        OnboardingBackground()
         PageTitle(
             modifier = Modifier
                 .fillMaxWidth()
@@ -442,23 +474,28 @@ private fun EmptyContent(
 private fun LoadingContent(
     mode: MediaGalleryMode,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 48.dp)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier.fillMaxSize(),
     ) {
-        CircularProgressIndicator()
-        val res = when (mode) {
-            MediaGalleryMode.Images -> R.string.screen_media_browser_list_loading_media
-            MediaGalleryMode.Files -> R.string.screen_media_browser_list_loading_files
+        OnboardingBackground()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 48.dp)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            CircularProgressIndicator()
+            val res = when (mode) {
+                MediaGalleryMode.Images -> R.string.screen_media_browser_list_loading_media
+                MediaGalleryMode.Files -> R.string.screen_media_browser_list_loading_files
+            }
+            Text(
+                text = stringResource(res),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
         }
-        Text(
-            text = stringResource(res),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
     }
 }
 
