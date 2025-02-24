@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2022-2024 New Vector Ltd.
  *
@@ -35,7 +36,7 @@ plugins {
     alias(libs.plugins.licensee)
     alias(libs.plugins.kotlin.serialization)
     // To be able to update the firebase.xml files, uncomment and build the project
-    // id("com.google.gms.google-services")
+    id("com.google.gms.google-services")
 }
 
 setupKover()
@@ -44,7 +45,8 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        applicationId = BuildTimeConfig.APPLICATION_ID
+        //applicationId = BuildTimeConfig.APPLICATION_ID
+        applicationId = "pt.aguiarvieira.element"
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -94,7 +96,8 @@ android {
         }
     }
 
-    val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    //val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    val baseAppName = "AguiarVieira X"
     logger.warnInBox("Building $baseAppName")
 
     buildTypes {
