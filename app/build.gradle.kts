@@ -44,7 +44,8 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        applicationId = BuildTimeConfig.APPLICATION_ID
+        //applicationId = BuildTimeConfig.APPLICATION_ID
+        applicationId = net.daedric.element
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -94,7 +95,8 @@ android {
         }
     }
 
-    val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    //val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    val baseAppName = "Daedric.NET X"
     logger.warnInBox("Building $baseAppName")
 
     buildTypes {
