@@ -35,7 +35,7 @@ plugins {
     alias(libs.plugins.licensee)
     alias(libs.plugins.kotlin.serialization)
     // To be able to update the firebase.xml files, uncomment and build the project
-    id("com.google.gms.google-services")
+    // id("com.google.gms.google-services")
 }
 
 setupKover()
@@ -44,7 +44,7 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        applicationId = "pt.aguiarvieira.element"
+        applicationId = BuildTimeConfig.APPLICATION_ID
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -94,7 +94,7 @@ android {
         }
     }
 
-    val baseAppName = "AguiarVieira X"
+    val baseAppName = BuildTimeConfig.APPLICATION_NAME
     logger.warnInBox("Building $baseAppName")
 
     buildTypes {
