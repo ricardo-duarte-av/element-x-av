@@ -10,6 +10,7 @@
 import com.android.build.api.variant.FilterConfiguration.FilterType.ABI
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.tasks.GenerateBuildConfig
+import config.BuildTimeConfig
 import extension.AssetCopyTask
 import extension.ComponentMergingStrategy
 import extension.GitBranchNameValueSource
@@ -43,11 +44,7 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        applicationId = if (isEnterpriseBuild) {
-            "io.element.enterprise"
-        } else {
-            "pt.aguiarvieira.element"
-        }
+        applicationId = "pt.aguiarvieira.element"
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -97,11 +94,7 @@ android {
         }
     }
 
-    val baseAppName = if (isEnterpriseBuild) {
-        "Element Enterprise"
-    } else {
-        "AguiarVieira X"
-    }
+    val baseAppName = "AguiarVieira X"
     logger.warnInBox("Building $baseAppName")
 
     buildTypes {
