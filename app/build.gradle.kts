@@ -45,7 +45,7 @@ android {
 
     defaultConfig {
         //applicationId = BuildTimeConfig.APPLICATION_ID
-        applicationId = net.daedric.element
+        applicationId = "net.daedric.element"
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
