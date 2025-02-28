@@ -187,7 +187,7 @@ vanniktech_blurhash = "com.vanniktech:blurhash:0.3.0"
 telephoto_zoomableimage = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "telephoto" }
 telephoto_flick = { module = "me.saket.telephoto:flick-android", version.ref = "telephoto" }
 statemachine = "com.freeletics.flowredux:compose:1.2.2"
-maplibre = "org.maplibre.gl:android-sdk:11.8.1"
+maplibre = "org.maplibre.gl:android-sdk:11.8.2"
 maplibre_ktx = "org.maplibre.gl:android-sdk-ktx-v7:3.0.2"
 maplibre_annotation = "org.maplibre.gl:android-plugin-annotation-v9:3.0.2"
 opusencoder = "io.element.android:opusencoder:1.1.0"
@@ -233,7 +233,7 @@ kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 anvil = { id = "dev.zacsweers.anvil", version.ref = "anvil" }
 detekt = "io.gitlab.arturbosch.detekt:1.23.8"
-ktlint = "org.jlleitschuh.gradle.ktlint:12.1.2"
+ktlint = "org.jlleitschuh.gradle.ktlint:12.2.0"
 dependencygraph = "com.savvasdalkitsis.module-dependency-graph:0.12"
 dependencycheck = "org.owasp.dependencycheck:12.1.0"
 dependencyanalysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyAnalysis" }
