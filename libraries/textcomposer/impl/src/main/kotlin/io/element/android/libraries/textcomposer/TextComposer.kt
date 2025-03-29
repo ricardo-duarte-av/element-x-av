@@ -348,7 +348,7 @@ private fun StandardLayout(
     Column(modifier = modifier) {
         if (isRoomEncrypted == false) {
             Spacer(Modifier.height(16.dp))
-            NotEncryptedBadge()
+            //NotEncryptedBadge()
             Spacer(Modifier.height(4.dp))
         }
         Row(verticalAlignment = Alignment.Bottom) {
