@@ -10,13 +10,8 @@ ksp = "2.1.20-2.0.0"
 firebaseAppDistribution = "5.1.1"
 
 # AndroidX
-core = "1.15.0"
-# Warning: there is an issue with 1.1.0 and 1.1.1, that I cannot repro on unit test.
-# To repro with the application:
-# Clear the storage of the application and run the app. Nearly each time, there is an infinite loading
-# due to the DefaultMigrationStore not behaving as expected.
-# Stick to 1.0.0 for now, and ensure that this scenario cannot be reproduced when upgrading the version.
-datastore = "1.0.0"
+core = "1.16.0"
+datastore = "1.1.4"
 constraintlayout = "2.2.1"
 constraintlayout_compose = "1.1.1"
 lifecycle = "2.8.7"
@@ -172,7 +167,7 @@ showkase = { module = "com.airbnb.android:showkase", version.ref = "showkase" }
 showkase_processor = { module = "com.airbnb.android:showkase-processor", version.ref = "showkase" }
 jsoup = "org.jsoup:jsoup:1.19.1"
 appyx_core = { module = "com.bumble.appyx:core", version.ref = "appyx" }
-molecule-runtime = "app.cash.molecule:molecule-runtime:2.0.0"
+molecule-runtime = "app.cash.molecule:molecule-runtime:2.1.0"
 timber = "com.jakewharton.timber:timber:5.0.1"
 matrix_sdk = "org.matrix.rustcomponents:sdk-android:25.4.11"
 matrix_richtexteditor = { module = "io.element.android:wysiwyg", version.ref = "wysiwyg" }
@@ -181,7 +176,7 @@ sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", ver
 sqldelight-driver-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 sqlcipher = "net.zetetic:android-database-sqlcipher:4.5.4"
-sqlite = "androidx.sqlite:sqlite-ktx:2.4.0"
+sqlite = "androidx.sqlite:sqlite-ktx:2.5.0"
 unifiedpush = "com.github.UnifiedPush:android-connector:2.4.0"
 otaliastudios_transcoder = "com.otaliastudios:transcoder:0.11.2"
 vanniktech_blurhash = "com.vanniktech:blurhash:0.3.0"
