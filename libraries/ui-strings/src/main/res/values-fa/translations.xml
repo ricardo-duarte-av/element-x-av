@@ -189,8 +189,8 @@
   <string name="common_loading">"بار کردن…"</string>
   <string name="common_loading_more">"بار کردن بیش‌تر…"</string>
   <plurals name="common_member_count">
-    <item quantity="%1$d عضو">"one"</item>
-    <item quantity="%1$d عضو">"other"</item>
+    <item quantity="one">"%1$d عضو"</item>
+    <item quantity="other">"%1$d عضو"</item>
   </plurals>
   <string name="common_message">"پیام"</string>
   <string name="common_message_actions">"کنش‌های پیام"</string>
