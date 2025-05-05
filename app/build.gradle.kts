@@ -37,7 +37,7 @@ plugins {
     alias(libs.plugins.licensee)
     alias(libs.plugins.kotlin.serialization)
     // To be able to update the firebase.xml files, uncomment and build the project
-    id("com.google.gms.google-services")
+    // id("com.google.gms.google-services")
 }
 
 setupKover()
@@ -46,8 +46,7 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        //applicationId = BuildTimeConfig.APPLICATION_ID
-        applicationId = "pt.aguiarvieira.element"
+        applicationId = BuildTimeConfig.APPLICATION_ID
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -103,19 +102,29 @@ android {
         }
     }
 
-    //val baseAppName = BuildTimeConfig.APPLICATION_NAME
-    val baseAppName = "AguiarVieira X"
-    logger.warnInBox("Building $baseAppName")
+    val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    logger.warnInBox("Building ${defaultConfig.applicationId} ($baseAppName)")
 
     buildTypes {
+        val oidcRedirectSchemeBase = BuildTimeConfig.METADATA_HOST_REVERSED ?: "io.element.android"
         getByName("debug") {
             resValue("string", "app_name", "$baseAppName dbg")
+            resValue(
+                "string",
+                "login_redirect_scheme",
+                "$oidcRedirectSchemeBase.debug",
+            )
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
         }
 
         getByName("release") {
             resValue("string", "app_name", baseAppName)
+            resValue(
+                "string",
+                "login_redirect_scheme",
+                oidcRedirectSchemeBase,
+            )
             signingConfig = signingConfigs.getByName("debug")
 
             postprocessing {
@@ -133,6 +142,11 @@ android {
             applicationIdSuffix = ".nightly"
             versionNameSuffix = "-nightly"
             resValue("string", "app_name", "$baseAppName nightly")
+            resValue(
+                "string",
+                "login_redirect_scheme",
+                "$oidcRedirectSchemeBase.nightly",
+            )
             matchingFallbacks += listOf("release")
             signingConfig = signingConfigs.getByName("nightly")
 
@@ -286,6 +300,7 @@ dependencies {
     testImplementation(libs.test.truth)
     testImplementation(libs.test.turbine)
     testImplementation(projects.libraries.matrix.test)
+    testImplementation(projects.services.toolbox.test)
 
     koverDependencies()
 }
