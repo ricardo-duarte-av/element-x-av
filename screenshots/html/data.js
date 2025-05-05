@@ -1229,7 +1229,7 @@ export const screenshots = [
 ["libraries.textcomposer_TextComposerReply_Day_9_en","libraries.textcomposer_TextComposerReply_Night_9_en",20210,],
 ["libraries.textcomposer_TextComposerSimpleNotEncrypted_Day_0_en","libraries.textcomposer_TextComposerSimpleNotEncrypted_Night_0_en",20210,],
 ["libraries.textcomposer_TextComposerSimple_Day_0_en","libraries.textcomposer_TextComposerSimple_Night_0_en",20210,],
-["libraries.textcomposer_TextComposerVoiceNotEncrypted_Day_0_en","libraries.textcomposer_TextComposerVoiceNotEncrypted_Night_0_en",0,],
+["libraries.textcomposer_TextComposerVoiceNotEncrypted_Day_0_en","libraries.textcomposer_TextComposerVoiceNotEncrypted_Night_0_en",20210,],
 ["libraries.textcomposer_TextComposerVoice_Day_0_en","libraries.textcomposer_TextComposerVoice_Night_0_en",0,],
 ["libraries.designsystem.theme.components_TextDark_Text_en","",0,],
 ["libraries.designsystem.components.dialogs_TextFieldDialogWithError_Day_0_en","libraries.designsystem.components.dialogs_TextFieldDialogWithError_Night_0_en",20210,],
