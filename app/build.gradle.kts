@@ -47,7 +47,7 @@ android {
 
     defaultConfig {
         //applicationId = BuildTimeConfig.APPLICATION_ID
-        applicationId = "net.daedric.element"
+        applicationId = "pt.aguiarvieira.element"
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -104,7 +104,7 @@ android {
     }
 
     //val baseAppName = BuildTimeConfig.APPLICATION_NAME
-    val baseAppName = "Daedric.NET X"
+    val baseAppName = "AguiarVieira X"
     logger.warnInBox("Building $baseAppName")
     buildTypes {
         val oidcRedirectSchemeBase = BuildTimeConfig.METADATA_HOST_REVERSED ?: "io.element.android"
