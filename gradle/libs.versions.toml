@@ -11,7 +11,7 @@ firebaseAppDistribution = "5.1.1"
 
 # AndroidX
 core = "1.16.0"
-datastore = "1.1.6"
+datastore = "1.1.7"
 constraintlayout = "2.2.1"
 constraintlayout_compose = "1.1.1"
 lifecycle = "2.9.0"
@@ -169,7 +169,7 @@ jsoup = "org.jsoup:jsoup:1.20.1"
 appyx_core = { module = "com.bumble.appyx:core", version.ref = "appyx" }
 molecule-runtime = "app.cash.molecule:molecule-runtime:2.1.0"
 timber = "com.jakewharton.timber:timber:5.0.1"
-matrix_sdk = "org.matrix.rustcomponents:sdk-android:25.5.13"
+matrix_sdk = "org.matrix.rustcomponents:sdk-android:25.5.21"
 matrix_richtexteditor = { module = "io.element.android:wysiwyg", version.ref = "wysiwyg" }
 matrix_richtexteditor_compose = { module = "io.element.android:wysiwyg-compose", version.ref = "wysiwyg" }
 sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
