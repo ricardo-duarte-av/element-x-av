@@ -21,9 +21,11 @@ import io.element.android.features.call.api.CallType
 import io.element.android.features.call.api.CurrentCall
 import io.element.android.features.call.impl.notifications.CallNotificationData
 import io.element.android.features.call.impl.notifications.RingingCallNotificationCreator
+import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.di.AppScope
 import io.element.android.libraries.di.ApplicationContext
 import io.element.android.libraries.di.SingleIn
+import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.matrix.api.MatrixClientProvider
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.matrix.ui.media.ImageLoaderHolder
@@ -86,6 +88,7 @@ interface ActiveCallManager {
 @ContributesBinding(AppScope::class)
 class DefaultActiveCallManager @Inject constructor(
     @ApplicationContext context: Context,
+    @AppCoroutineScope
     private val coroutineScope: CoroutineScope,
     private val onMissedCallNotificationHandler: OnMissedCallNotificationHandler,
     private val ringingCallNotificationCreator: RingingCallNotificationCreator,
@@ -218,7 +221,7 @@ class DefaultActiveCallManager @Inject constructor(
             timestamp = notificationData.timestamp,
             textContent = notificationData.textContent,
         ) ?: return
-        runCatching {
+        runCatchingExceptions {
             notificationManagerCompat.notify(
                 NotificationIdProvider.getForegroundServiceNotificationId(ForegroundServiceType.INCOMING_CALL),
                 notification,
