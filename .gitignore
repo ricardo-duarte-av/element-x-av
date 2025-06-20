@@ -107,3 +107,6 @@ lint/tmp/
 .DS_Store
 
 checkouts/**
+
+tests/
+screenshots/
