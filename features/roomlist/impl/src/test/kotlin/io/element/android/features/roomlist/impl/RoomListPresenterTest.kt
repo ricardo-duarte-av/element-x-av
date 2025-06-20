@@ -15,7 +15,6 @@ import im.vector.app.features.analytics.plan.Interaction
 import io.element.android.features.invite.api.SeenInvitesStore
 import io.element.android.features.invite.api.acceptdecline.AcceptDeclineInviteEvents
 import io.element.android.features.invite.api.acceptdecline.AcceptDeclineInviteState
-import io.element.android.features.invite.api.acceptdecline.anAcceptDeclineInviteState
 import io.element.android.features.invite.test.InMemorySeenInvitesStore
 import io.element.android.features.leaveroom.api.LeaveRoomEvent
 import io.element.android.features.leaveroom.api.LeaveRoomState
@@ -75,6 +74,7 @@ import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import io.element.android.libraries.preferences.api.store.SessionPreferencesStore
 import io.element.android.libraries.preferences.test.InMemoryAppPreferencesStore
 import io.element.android.libraries.preferences.test.InMemorySessionPreferencesStore
+import io.element.android.libraries.push.api.battery.aBatteryOptimizationState
 import io.element.android.libraries.push.api.notifications.NotificationCleaner
 import io.element.android.libraries.push.test.notifications.FakeNotificationCleaner
 import io.element.android.services.analytics.api.AnalyticsService
@@ -712,6 +712,7 @@ class RoomListPresenterTest {
         analyticsService = analyticsService,
         acceptDeclineInvitePresenter = acceptDeclineInvitePresenter,
         fullScreenIntentPermissionsPresenter = { aFullScreenIntentPermissionsState() },
+        batteryOptimizationPresenter = { aBatteryOptimizationState() },
         notificationCleaner = notificationCleaner,
         logoutPresenter = { aDirectLogoutState() },
         appPreferencesStore = appPreferencesStore,
