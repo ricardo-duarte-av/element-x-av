@@ -46,7 +46,7 @@ wysiwyg = "2.38.4"
 telephoto = "0.16.0"
 
 # Dependency analysis
-dependencyAnalysis = "2.18.0"
+dependencyAnalysis = "2.19.0"
 
 # DI
 dagger = "2.56.2"
@@ -168,7 +168,7 @@ serialization_json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-jso
 kotlinx_collections_immutable = "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.4.0"
 showkase = { module = "com.airbnb.android:showkase", version.ref = "showkase" }
 showkase_processor = { module = "com.airbnb.android:showkase-processor", version.ref = "showkase" }
-jsoup = "org.jsoup:jsoup:1.20.1"
+jsoup = "org.jsoup:jsoup:1.21.1"
 appyx_core = { module = "com.bumble.appyx:core", version.ref = "appyx" }
 molecule-runtime = "app.cash.molecule:molecule-runtime:2.1.0"
 timber = "com.jakewharton.timber:timber:5.0.1"
