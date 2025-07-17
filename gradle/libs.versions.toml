@@ -14,7 +14,7 @@ core = "1.16.0"
 datastore = "1.1.7"
 constraintlayout = "2.2.1"
 constraintlayout_compose = "1.1.1"
-lifecycle = "2.9.1"
+lifecycle = "2.9.2"
 activity = "1.10.1"
 media3 = "1.7.1"
 camera = "1.4.2"
@@ -50,7 +50,7 @@ haze = "1.6.8"
 dependencyAnalysis = "2.19.0"
 
 # DI
-dagger = "2.56.2"
+dagger = "2.57"
 anvil = "0.4.1"
 
 # Auto service
@@ -149,7 +149,7 @@ test_corektx = { module = "androidx.test:core-ktx", version.ref = "test_core" }
 test_arch_core = "androidx.arch.core:core-testing:2.2.0"
 test_junit = "junit:junit:4.13.2"
 test_runner = "androidx.test:runner:1.6.2"
-test_mockk = "io.mockk:mockk:1.14.4"
+test_mockk = "io.mockk:mockk:1.14.5"
 test_konsist = "com.lemonappdev:konsist:0.17.3"
 test_turbine = "app.cash.turbine:turbine:1.2.1"
 test_truth = "com.google.truth:truth:1.4.4"
