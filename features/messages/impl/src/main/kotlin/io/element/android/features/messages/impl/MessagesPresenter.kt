@@ -48,7 +48,7 @@ import io.element.android.features.messages.impl.timeline.model.event.TimelineIt
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemStateContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemTextBasedContent
 import io.element.android.features.messages.impl.timeline.protection.TimelineProtectionState
-import io.element.android.features.messages.impl.voicemessages.composer.VoiceMessageComposerState
+import io.element.android.features.messages.impl.voicemessages.composer.DefaultVoiceMessageComposerPresenter
 import io.element.android.features.roomcall.api.RoomCallState
 import io.element.android.features.roommembermoderation.api.RoomMemberModerationEvents
 import io.element.android.features.roommembermoderation.api.RoomMemberModerationState
@@ -63,8 +63,6 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarMessage
 import io.element.android.libraries.designsystem.utils.snackbar.collectSnackbarMessageAsState
-import io.element.android.libraries.featureflag.api.FeatureFlagService
-import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.encryption.EncryptionService
 import io.element.android.libraries.matrix.api.encryption.identity.IdentityState
 import io.element.android.libraries.matrix.api.permalink.PermalinkParser
@@ -95,7 +93,7 @@ class MessagesPresenter @AssistedInject constructor(
     @Assisted private val navigator: MessagesNavigator,
     private val room: JoinedRoom,
     @Assisted private val composerPresenter: Presenter<MessageComposerState>,
-    private val voiceMessageComposerPresenter: Presenter<VoiceMessageComposerState>,
+    voiceMessageComposerPresenterFactory: DefaultVoiceMessageComposerPresenter.Factory,
     @Assisted private val timelinePresenter: Presenter<TimelineState>,
     private val timelineProtectionPresenter: Presenter<TimelineProtectionState>,
     private val identityChangeStatePresenter: Presenter<IdentityChangeState>,
@@ -111,10 +109,9 @@ class MessagesPresenter @AssistedInject constructor(
     private val snackbarDispatcher: SnackbarDispatcher,
     private val dispatchers: CoroutineDispatchers,
     private val clipboardHelper: ClipboardHelper,
-    private val featureFlagsService: FeatureFlagService,
     private val htmlConverterProvider: HtmlConverterProvider,
     private val buildMeta: BuildMeta,
-    private val timelineController: TimelineController,
+    @Assisted private val timelineController: TimelineController,
     private val permalinkParser: PermalinkParser,
     private val analyticsService: AnalyticsService,
     private val encryptionService: EncryptionService,
@@ -126,8 +123,13 @@ class MessagesPresenter @AssistedInject constructor(
             composerPresenter: Presenter<MessageComposerState>,
             timelinePresenter: Presenter<TimelineState>,
             actionListPresenter: Presenter<ActionListState>,
+            timelineController: TimelineController,
         ): MessagesPresenter
     }
+
+    private val voiceMessageComposerPresenter = voiceMessageComposerPresenterFactory.create(
+        timelineMode = timelineController.mainTimelineMode()
+    )
 
     @Composable
     override fun present(): MessagesState {
@@ -148,9 +150,8 @@ class MessagesPresenter @AssistedInject constructor(
         val pinnedMessagesBannerState = pinnedMessagesBannerPresenter.present()
         val roomCallState = roomCallStatePresenter.present()
         val roomMemberModerationState = roomMemberModerationPresenter.present()
-        val syncUpdateFlow = room.syncUpdateFlow.collectAsState()
 
-        val userEventPermissions by userEventPermissions(syncUpdateFlow.value)
+        val userEventPermissions by userEventPermissions(roomInfo)
 
         val roomAvatar by remember {
             derivedStateOf { roomInfo.avatarData() }
@@ -186,11 +187,6 @@ class MessagesPresenter @AssistedInject constructor(
         val isOnline by syncService.isOnline.collectAsState()
 
         val snackbarMessage by snackbarDispatcher.collectSnackbarMessageAsState()
-
-        var enableVoiceMessages by remember { mutableStateOf(false) }
-        LaunchedEffect(featureFlagsService) {
-            enableVoiceMessages = featureFlagsService.isFeatureEnabled(FeatureFlags.VoiceMessages)
-        }
 
         var dmUserVerificationState by remember { mutableStateOf<IdentityState?>(null) }
 
@@ -261,7 +257,6 @@ class MessagesPresenter @AssistedInject constructor(
             showReinvitePrompt = showReinvitePrompt,
             inviteProgress = inviteProgress.value,
             enableTextFormatting = MessageComposerConfig.ENABLE_RICH_TEXT_EDITING,
-            enableVoiceMessages = enableVoiceMessages,
             appName = buildMeta.applicationName,
             roomCallState = roomCallState,
             pinnedMessagesBannerState = pinnedMessagesBannerState,
@@ -273,8 +268,13 @@ class MessagesPresenter @AssistedInject constructor(
     }
 
     @Composable
-    private fun userEventPermissions(updateKey: Long): State<UserEventPermissions> {
-        return produceState(UserEventPermissions.DEFAULT, key1 = updateKey) {
+    private fun userEventPermissions(roomInfo: RoomInfo): State<UserEventPermissions> {
+        val key = if (roomInfo.privilegedCreatorRole && roomInfo.creators.contains(room.sessionId)) {
+            Long.MAX_VALUE
+        } else {
+            roomInfo.roomPowerLevels?.hashCode() ?: 0L
+        }
+        return produceState(UserEventPermissions.DEFAULT, key1 = key) {
             value = UserEventPermissions(
                 canSendMessage = room.canSendMessage(type = MessageEventType.ROOM_MESSAGE).getOrElse { true },
                 canSendReaction = room.canSendMessage(type = MessageEventType.REACTION).getOrElse { true },
@@ -449,7 +449,6 @@ class MessagesPresenter @AssistedInject constructor(
         val composerMode = MessageComposerMode.EditCaption(
             eventOrTransactionId = targetEvent.eventOrTransactionId,
             content = "",
-            showCaptionCompatibilityWarning = featureFlagsService.isFeatureEnabled(FeatureFlags.MediaCaptionWarning),
         )
         composerState.eventSink(
             MessageComposerEvents.SetMode(composerMode)
@@ -463,7 +462,6 @@ class MessagesPresenter @AssistedInject constructor(
         val composerMode = MessageComposerMode.EditCaption(
             eventOrTransactionId = targetEvent.eventOrTransactionId,
             content = (targetEvent.content as? TimelineItemEventContentWithAttachment)?.caption.orEmpty(),
-            showCaptionCompatibilityWarning = featureFlagsService.isFeatureEnabled(FeatureFlags.MediaCaptionWarning),
         )
         composerState.eventSink(
             MessageComposerEvents.SetMode(composerMode)

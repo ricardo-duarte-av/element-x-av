@@ -78,7 +78,7 @@ class RustMatrixClientFactory @Inject constructor(
         client.setUtdDelegate(UtdTracker(analyticsService))
 
         val syncService = client.syncService()
-            .withSharePos(enable = featureFlagService.isFeatureEnabled(FeatureFlags.SharePos))
+            .withSharePos(true)
             .withOfflineMode()
             .finish()
 
@@ -132,6 +132,7 @@ class RustMatrixClientFactory @Inject constructor(
                 )
             )
             .enableShareHistoryOnInvite(featureFlagService.isFeatureEnabled(FeatureFlags.EnableKeyShareOnInvite))
+            .threadsEnabled(featureFlagService.isFeatureEnabled(FeatureFlags.HideThreadedEvents), threadSubscriptions = false)
             .run {
                 // Apply sliding sync version settings
                 when (slidingSyncType) {

@@ -32,9 +32,6 @@ import io.element.android.features.messages.impl.utils.FakeTextPillificationHelp
 import io.element.android.features.messages.impl.utils.TextPillificationHelper
 import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
-import io.element.android.libraries.featureflag.api.FeatureFlagService
-import io.element.android.libraries.featureflag.api.FeatureFlags
-import io.element.android.libraries.featureflag.test.FakeFeatureFlagService
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.ThreadId
@@ -48,6 +45,7 @@ import io.element.android.libraries.matrix.api.room.RoomMembersState
 import io.element.android.libraries.matrix.api.room.RoomMembershipState
 import io.element.android.libraries.matrix.api.room.draft.ComposerDraft
 import io.element.android.libraries.matrix.api.room.draft.ComposerDraftType
+import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.matrix.api.timeline.TimelineException
 import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransactionId
 import io.element.android.libraries.matrix.api.timeline.item.event.InReplyTo
@@ -87,6 +85,7 @@ import io.element.android.libraries.permissions.test.FakePermissionsPresenterFac
 import io.element.android.libraries.preferences.api.store.SessionPreferencesStore
 import io.element.android.libraries.preferences.api.store.VideoCompressionPreset
 import io.element.android.libraries.preferences.test.InMemorySessionPreferencesStore
+import io.element.android.libraries.push.test.notifications.conversations.FakeNotificationConversationService
 import io.element.android.libraries.textcomposer.mentions.MentionSpanProvider
 import io.element.android.libraries.textcomposer.mentions.MentionSpanTheme
 import io.element.android.libraries.textcomposer.mentions.ResolvedSuggestion
@@ -125,14 +124,12 @@ class MessageComposerPresenterTest {
     private val pickerProvider = FakePickerProvider().apply {
         givenResult(mockk()) // Uri is not available in JVM, so the only way to have a non-null Uri is using Mockk
     }
-    private val featureFlagService = FakeFeatureFlagService(
-        mapOf(FeatureFlags.LocationSharing.key to true)
-    )
     private val mediaPreProcessor = FakeMediaPreProcessor()
     private val snackbarDispatcher = SnackbarDispatcher()
     private val mockMediaUrl: Uri = mockk("localMediaUri")
     private val localMediaFactory = FakeLocalMediaFactory(mockMediaUrl)
     private val analyticsService = FakeAnalyticsService()
+    private val notificationConversationService = FakeNotificationConversationService()
 
     @Test
     fun `present - initial state`() = runTest {
@@ -1187,7 +1184,7 @@ class MessageComposerPresenterTest {
             room = FakeJoinedRoom(
                 typingNoticeResult = { Result.success(Unit) },
                 liveTimeline = FakeTimeline().apply {
-                    sendFileLambda = { _, _, _, _, _, _ ->
+                    sendFileLambda = { _, _, _, _, _ ->
                         Result.success(FakeMediaUploadHandler())
                     }
                 }
@@ -1527,9 +1524,9 @@ class MessageComposerPresenterTest {
         room: JoinedRoom = FakeJoinedRoom(
             typingNoticeResult = { Result.success(Unit) }
         ),
+        timeline: Timeline = room.liveTimeline,
         navigator: MessagesNavigator = FakeMessagesNavigator(),
         pickerProvider: PickerProvider = this@MessageComposerPresenterTest.pickerProvider,
-        featureFlagService: FeatureFlagService = this@MessageComposerPresenterTest.featureFlagService,
         locationService: LocationService = FakeLocationService(true),
         sessionPreferencesStore: SessionPreferencesStore = InMemorySessionPreferencesStore(),
         mediaPreProcessor: MediaPreProcessor = this@MessageComposerPresenterTest.mediaPreProcessor,
@@ -1551,14 +1548,23 @@ class MessageComposerPresenterTest {
         sessionCoroutineScope = this,
         room = room,
         mediaPickerProvider = pickerProvider,
-        featureFlagService = featureFlagService,
         sessionPreferencesStore = sessionPreferencesStore,
         localMediaFactory = localMediaFactory,
-        mediaSender = MediaSender(
-            preProcessor = mediaPreProcessor,
-            room = room,
-            mediaOptimizationConfigProvider = { MediaOptimizationConfig(compressImages = true, videoCompressionPreset = VideoCompressionPreset.STANDARD) }
-        ),
+        mediaSenderFactory = object : MediaSender.Factory {
+            override fun create(timelineMode: Timeline.Mode): MediaSender {
+                return MediaSender(
+                    preProcessor = mediaPreProcessor,
+                    room = room,
+                    timelineMode = timelineMode,
+                    mediaOptimizationConfigProvider = {
+                        MediaOptimizationConfig(
+                        compressImages = true,
+                        videoCompressionPreset = VideoCompressionPreset.STANDARD
+                    )
+                    }
+                )
+            }
+        },
         snackbarDispatcher = snackbarDispatcher,
         analyticsService = analyticsService,
         locationService = locationService,
@@ -1568,12 +1574,13 @@ class MessageComposerPresenterTest {
         permissionsPresenterFactory = FakePermissionsPresenterFactory(permissionPresenter),
         permalinkParser = permalinkParser,
         permalinkBuilder = permalinkBuilder,
-        timelineController = TimelineController(room),
+        timelineController = TimelineController(room, timeline),
         draftService = draftService,
         mentionSpanProvider = mentionSpanProvider,
         pillificationHelper = textPillificationHelper,
         suggestionsProcessor = SuggestionsProcessor(),
         mediaOptimizationConfigProvider = mediaOptimizationConfigProvider,
+        notificationConversationService = notificationConversationService,
     ).apply {
         isTesting = true
         showTextFormatting = isRichTextEditorEnabled
@@ -1593,11 +1600,9 @@ fun anEditMode(
 fun anEditCaptionMode(
     eventOrTransactionId: EventOrTransactionId = AN_EVENT_ID.toEventOrTransactionId(),
     caption: String = A_CAPTION,
-    showCaptionCompatibilityWarning: Boolean = false,
 ) = MessageComposerMode.EditCaption(
     eventOrTransactionId = eventOrTransactionId,
     content = caption,
-    showCaptionCompatibilityWarning = showCaptionCompatibilityWarning,
 )
 
 fun aReplyMode() = MessageComposerMode.Reply(

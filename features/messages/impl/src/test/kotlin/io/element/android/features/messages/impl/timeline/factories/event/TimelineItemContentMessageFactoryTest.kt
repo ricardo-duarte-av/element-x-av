@@ -32,9 +32,6 @@ import io.element.android.features.messages.impl.utils.FakeTextPillificationHelp
 import io.element.android.features.messages.test.timeline.FakeHtmlConverterProvider
 import io.element.android.libraries.androidutils.filesize.FakeFileSizeFormatter
 import io.element.android.libraries.core.mimetype.MimeTypes
-import io.element.android.libraries.featureflag.api.FeatureFlagService
-import io.element.android.libraries.featureflag.api.FeatureFlags
-import io.element.android.libraries.featureflag.test.FakeFeatureFlagService
 import io.element.android.libraries.matrix.api.media.AudioDetails
 import io.element.android.libraries.matrix.api.media.AudioInfo
 import io.element.android.libraries.matrix.api.media.FileInfo
@@ -43,6 +40,7 @@ import io.element.android.libraries.matrix.api.media.MediaSource
 import io.element.android.libraries.matrix.api.media.ThumbnailInfo
 import io.element.android.libraries.matrix.api.media.VideoInfo
 import io.element.android.libraries.matrix.api.permalink.PermalinkData
+import io.element.android.libraries.matrix.api.timeline.item.EventThreadInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.EmoteMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.FileMessageType
@@ -431,35 +429,6 @@ class TimelineItemContentMessageFactoryTest {
     }
 
     @Test
-    fun `test create VoiceMessageType feature disabled`() = runTest {
-        val sut = createTimelineItemContentMessageFactory(
-            featureFlagService = FakeFeatureFlagService(
-                initialState = mapOf(
-                    FeatureFlags.VoiceMessages.key to false,
-                )
-            )
-        )
-        val result = sut.create(
-            content = createMessageContent(type = VoiceMessageType("filename", null, null, MediaSource("url"), null, null)),
-            senderDisambiguatedDisplayName = "Bob",
-            eventId = AN_EVENT_ID,
-        )
-        val expected = TimelineItemAudioContent(
-            filename = "filename",
-            fileSize = 0L,
-            caption = null,
-            formattedCaption = null,
-            isEdited = false,
-            duration = Duration.ZERO,
-            mediaSource = MediaSource(url = "url", json = null),
-            mimeType = MimeTypes.OctetStream,
-            formattedFileSize = "0 Bytes",
-            fileExtension = ""
-        )
-        assertThat(result).isEqualTo(expected)
-    }
-
-    @Test
     fun `test create ImageMessageType`() = runTest {
         val sut = createTimelineItemContentMessageFactory()
         val result = sut.create(
@@ -781,26 +750,24 @@ class TimelineItemContentMessageFactoryTest {
         body: String = "Body",
         inReplyTo: InReplyTo? = null,
         isEdited: Boolean = false,
-        isThreaded: Boolean = false,
+        threadInfo: EventThreadInfo = EventThreadInfo(threadRootId = null, threadSummary = null),
         type: MessageType,
     ): MessageContent {
         return MessageContent(
             body = body,
             inReplyTo = inReplyTo,
             isEdited = isEdited,
-            isThreaded = isThreaded,
+            threadInfo = threadInfo,
             type = type,
         )
     }
 
     private fun createTimelineItemContentMessageFactory(
-        featureFlagService: FeatureFlagService = FakeFeatureFlagService(),
         htmlConverterTransform: (String) -> CharSequence = { it },
         permalinkParser: FakePermalinkParser = FakePermalinkParser(),
     ) = TimelineItemContentMessageFactory(
         fileSizeFormatter = FakeFileSizeFormatter(),
         fileExtensionExtractor = FileExtensionExtractorWithoutValidation(),
-        featureFlagService = featureFlagService,
         htmlConverterProvider = FakeHtmlConverterProvider(htmlConverterTransform),
         permalinkParser = permalinkParser,
         textPillificationHelper = FakeTextPillificationHelper(),
