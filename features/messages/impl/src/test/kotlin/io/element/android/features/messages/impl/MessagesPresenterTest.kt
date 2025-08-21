@@ -34,8 +34,8 @@ import io.element.android.features.messages.impl.timeline.model.event.aTimelineI
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemPollContent
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemTextContent
 import io.element.android.features.messages.impl.timeline.protection.aTimelineProtectionState
-import io.element.android.features.messages.impl.voicemessages.composer.aVoiceMessageComposerState
 import io.element.android.features.messages.test.timeline.FakeHtmlConverterProvider
+import io.element.android.features.messages.test.timeline.voicemessages.composer.FakeDefaultVoiceMessageComposerPresenterFactory
 import io.element.android.features.roomcall.api.aStandByCallState
 import io.element.android.features.roommembermoderation.api.RoomMemberModerationState
 import io.element.android.libraries.androidutils.clipboard.FakeClipboardHelper
@@ -46,9 +46,6 @@ import io.element.android.libraries.core.mimetype.MimeTypes
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
-import io.element.android.libraries.featureflag.api.FeatureFlagService
-import io.element.android.libraries.featureflag.api.FeatureFlags
-import io.element.android.libraries.featureflag.test.FakeFeatureFlagService
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.UserId
@@ -59,6 +56,7 @@ import io.element.android.libraries.matrix.api.room.MessageEventType
 import io.element.android.libraries.matrix.api.room.RoomMembersState
 import io.element.android.libraries.matrix.api.room.RoomMembershipState
 import io.element.android.libraries.matrix.api.room.tombstone.SuccessorRoom
+import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.matrix.api.timeline.item.TimelineItemDebugInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransactionId
 import io.element.android.libraries.matrix.api.timeline.item.event.toEventOrTransactionId
@@ -911,7 +909,10 @@ class MessagesPresenterTest {
             liveTimeline = timeline,
             typingNoticeResult = { Result.success(Unit) },
         )
-        val presenter = createMessagesPresenter(joinedRoom = room, analyticsService = analyticsService)
+        val presenter = createMessagesPresenter(
+            joinedRoom = room,
+            analyticsService = analyticsService,
+        )
         presenter.testWithLifecycleOwner {
             val messageEvent = aMessageEvent(
                 content = aTimelineItemTextContent()
@@ -994,37 +995,6 @@ class MessagesPresenterTest {
                     composerMode = MessageComposerMode.EditCaption(
                         eventOrTransactionId = AN_EVENT_ID.toEventOrTransactionId(),
                         content = A_CAPTION,
-                        showCaptionCompatibilityWarning = true,
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `present - handle action edit caption without warning`() = runTest {
-        val messageEvent = aMessageEvent(
-            content = aTimelineItemImageContent(
-                caption = A_CAPTION,
-            )
-        )
-        val composerRecorder = EventsRecorder<MessageComposerEvents>()
-        val presenter = createMessagesPresenter(
-            messageComposerPresenter = { aMessageComposerState(eventSink = composerRecorder) },
-            featureFlagService = FakeFeatureFlagService(
-                initialState = mapOf(FeatureFlags.MediaCaptionWarning.key to false)
-            )
-        )
-        presenter.testWithLifecycleOwner {
-            val initialState = awaitItem()
-            initialState.eventSink(MessagesEvents.HandleAction(TimelineItemAction.EditCaption, messageEvent))
-            awaitItem()
-            composerRecorder.assertSingle(
-                MessageComposerEvents.SetMode(
-                    composerMode = MessageComposerMode.EditCaption(
-                        eventOrTransactionId = AN_EVENT_ID.toEventOrTransactionId(),
-                        content = A_CAPTION,
-                        showCaptionCompatibilityWarning = false,
                     )
                 )
             )
@@ -1051,37 +1021,6 @@ class MessagesPresenterTest {
                     composerMode = MessageComposerMode.EditCaption(
                         eventOrTransactionId = AN_EVENT_ID.toEventOrTransactionId(),
                         content = "",
-                        showCaptionCompatibilityWarning = true,
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `present - handle action add caption without warning`() = runTest {
-        val composerRecorder = EventsRecorder<MessageComposerEvents>()
-        val presenter = createMessagesPresenter(
-            messageComposerPresenter = { aMessageComposerState(eventSink = composerRecorder) },
-            featureFlagService = FakeFeatureFlagService(
-                initialState = mapOf(FeatureFlags.MediaCaptionWarning.key to false)
-            )
-        )
-        val messageEvent = aMessageEvent(
-            content = aTimelineItemImageContent(
-                caption = null,
-            )
-        )
-        presenter.testWithLifecycleOwner {
-            val initialState = awaitItem()
-            initialState.eventSink(MessagesEvents.HandleAction(TimelineItemAction.AddCaption, messageEvent))
-            awaitItem()
-            composerRecorder.assertSingle(
-                MessageComposerEvents.SetMode(
-                    composerMode = MessageComposerMode.EditCaption(
-                        eventOrTransactionId = AN_EVENT_ID.toEventOrTransactionId(),
-                        content = "",
-                        showCaptionCompatibilityWarning = false,
                     )
                 )
             )
@@ -1112,6 +1051,7 @@ class MessagesPresenterTest {
         )
         val presenter = createMessagesPresenter(
             joinedRoom = room,
+            timeline = timeline,
         )
         presenter.testWithLifecycleOwner {
             skipItems(1)
@@ -1233,8 +1173,8 @@ class MessagesPresenterTest {
             liveTimeline = FakeTimeline(),
             typingNoticeResult = { Result.success(Unit) },
         ),
+        timeline: Timeline = joinedRoom.liveTimeline,
         navigator: FakeMessagesNavigator = FakeMessagesNavigator(),
-        featureFlagService: FeatureFlagService = FakeFeatureFlagService(),
         clipboardHelper: FakeClipboardHelper = FakeClipboardHelper(),
         analyticsService: FakeAnalyticsService = FakeAnalyticsService(),
         timelineEventSink: (TimelineEvents) -> Unit = {},
@@ -1254,7 +1194,7 @@ class MessagesPresenterTest {
         return MessagesPresenter(
             room = joinedRoom,
             composerPresenter = messageComposerPresenter,
-            voiceMessageComposerPresenter = { aVoiceMessageComposerState() },
+            voiceMessageComposerPresenterFactory = FakeDefaultVoiceMessageComposerPresenterFactory(backgroundScope),
             timelinePresenter = { aTimelineState(eventSink = timelineEventSink) },
             timelineProtectionPresenter = { aTimelineProtectionState() },
             actionListPresenter = { anActionListState(eventSink = actionListEventSink) },
@@ -1270,11 +1210,10 @@ class MessagesPresenterTest {
             snackbarDispatcher = SnackbarDispatcher(),
             navigator = navigator,
             clipboardHelper = clipboardHelper,
-            featureFlagsService = featureFlagService,
             buildMeta = aBuildMeta(),
             dispatchers = coroutineDispatchers,
             htmlConverterProvider = FakeHtmlConverterProvider(),
-            timelineController = TimelineController(joinedRoom),
+            timelineController = TimelineController(joinedRoom, timeline),
             permalinkParser = permalinkParser,
             encryptionService = encryptionService,
             analyticsService = analyticsService,

@@ -10,8 +10,6 @@ package io.element.android.libraries.matrix.impl.timeline
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import io.element.android.libraries.featureflag.api.FeatureFlagService
-import io.element.android.libraries.featureflag.test.FakeFeatureFlagService
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.timeline.MatrixTimelineItem
 import io.element.android.libraries.matrix.api.timeline.Timeline
@@ -92,13 +90,12 @@ class RustTimelineTest {
 
 private fun TestScope.createRustTimeline(
     inner: InnerTimeline,
-    mode: Timeline.Mode = Timeline.Mode.LIVE,
+    mode: Timeline.Mode = Timeline.Mode.Live,
     systemClock: SystemClock = FakeSystemClock(),
     joinedRoom: JoinedRoom = FakeJoinedRoom().apply { givenRoomInfo(aRoomInfo()) },
     coroutineScope: CoroutineScope = backgroundScope,
     dispatcher: CoroutineDispatcher = testCoroutineDispatchers().io,
     roomContentForwarder: RoomContentForwarder = RoomContentForwarder(FakeFfiRoomListService()),
-    featureFlagsService: FeatureFlagService = FakeFeatureFlagService(),
     onNewSyncedEvent: () -> Unit = {},
 ): RustTimeline {
     return RustTimeline(
@@ -109,7 +106,6 @@ private fun TestScope.createRustTimeline(
         coroutineScope = coroutineScope,
         dispatcher = dispatcher,
         roomContentForwarder = roomContentForwarder,
-        featureFlagsService = featureFlagsService,
         onNewSyncedEvent = onNewSyncedEvent,
     )
 }

@@ -8,22 +8,33 @@
 package io.element.android.libraries.mediaupload.api
 
 import android.net.Uri
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import io.element.android.libraries.core.extensions.flatMap
 import io.element.android.libraries.core.extensions.flatMapCatching
 import io.element.android.libraries.matrix.api.core.EventId
-import io.element.android.libraries.matrix.api.core.ProgressCallback
 import io.element.android.libraries.matrix.api.media.MediaUploadHandler
+import io.element.android.libraries.matrix.api.room.CreateTimelineParams
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
 
-class MediaSender @Inject constructor(
+class MediaSender @AssistedInject constructor(
     private val preProcessor: MediaPreProcessor,
     private val room: JoinedRoom,
+    @Assisted private val timelineMode: Timeline.Mode,
     private val mediaOptimizationConfigProvider: MediaOptimizationConfigProvider,
 ) {
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            timelineMode: Timeline.Mode,
+        ): MediaSender
+    }
+
     private val ongoingUploadJobs = ConcurrentHashMap<Job.Key, MediaUploadHandler>()
     val hasOngoingMediaUploads get() = ongoingUploadJobs.isNotEmpty()
 
@@ -45,16 +56,16 @@ class MediaSender @Inject constructor(
         mediaUploadInfo: MediaUploadInfo,
         caption: String?,
         formattedCaption: String?,
-        progressCallback: ProgressCallback?,
         inReplyToEventId: EventId?,
     ): Result<Unit> {
-        return room.liveTimeline.sendMedia(
-            uploadInfo = mediaUploadInfo,
-            progressCallback = progressCallback,
-            caption = caption,
-            formattedCaption = formattedCaption,
-            inReplyToEventId = inReplyToEventId,
-        )
+        return getTimeline().flatMap {
+            it.sendMedia(
+                uploadInfo = mediaUploadInfo,
+                caption = caption,
+                formattedCaption = formattedCaption,
+                inReplyToEventId = inReplyToEventId,
+            )
+        }
             .handleSendResult()
     }
 
@@ -63,7 +74,6 @@ class MediaSender @Inject constructor(
         mimeType: String,
         caption: String? = null,
         formattedCaption: String? = null,
-        progressCallback: ProgressCallback? = null,
         inReplyToEventId: EventId? = null,
         mediaOptimizationConfig: MediaOptimizationConfig,
     ): Result<Unit> {
@@ -75,9 +85,8 @@ class MediaSender @Inject constructor(
                 mediaOptimizationConfig = mediaOptimizationConfig,
             )
             .flatMapCatching { info ->
-                room.liveTimeline.sendMedia(
+                getTimeline().getOrThrow().sendMedia(
                     uploadInfo = info,
-                    progressCallback = progressCallback,
                     caption = caption,
                     formattedCaption = formattedCaption,
                     inReplyToEventId = inReplyToEventId,
@@ -90,7 +99,6 @@ class MediaSender @Inject constructor(
         uri: Uri,
         mimeType: String,
         waveForm: List<Float>,
-        progressCallback: ProgressCallback? = null,
         inReplyToEventId: EventId? = null,
     ): Result<Unit> {
         return preProcessor
@@ -107,9 +115,8 @@ class MediaSender @Inject constructor(
                     audioInfo = audioInfo,
                     waveform = waveForm,
                 )
-                room.liveTimeline.sendMedia(
+                getTimeline().getOrThrow().sendMedia(
                     uploadInfo = newInfo,
-                    progressCallback = progressCallback,
                     caption = null,
                     formattedCaption = null,
                     inReplyToEventId = inReplyToEventId,
@@ -131,7 +138,6 @@ class MediaSender @Inject constructor(
 
     private suspend fun Timeline.sendMedia(
         uploadInfo: MediaUploadInfo,
-        progressCallback: ProgressCallback?,
         caption: String?,
         formattedCaption: String?,
         inReplyToEventId: EventId?,
@@ -144,7 +150,6 @@ class MediaSender @Inject constructor(
                     imageInfo = uploadInfo.imageInfo,
                     caption = caption,
                     formattedCaption = formattedCaption,
-                    progressCallback = progressCallback,
                     inReplyToEventId = inReplyToEventId,
                 )
             }
@@ -155,7 +160,6 @@ class MediaSender @Inject constructor(
                     videoInfo = uploadInfo.videoInfo,
                     caption = caption,
                     formattedCaption = formattedCaption,
-                    progressCallback = progressCallback,
                     inReplyToEventId = inReplyToEventId,
                 )
             }
@@ -165,7 +169,6 @@ class MediaSender @Inject constructor(
                     audioInfo = uploadInfo.audioInfo,
                     caption = caption,
                     formattedCaption = formattedCaption,
-                    progressCallback = progressCallback,
                     inReplyToEventId = inReplyToEventId,
                 )
             }
@@ -174,7 +177,6 @@ class MediaSender @Inject constructor(
                     file = uploadInfo.file,
                     audioInfo = uploadInfo.audioInfo,
                     waveform = uploadInfo.waveform,
-                    progressCallback = progressCallback,
                     inReplyToEventId = inReplyToEventId,
                 )
             }
@@ -184,7 +186,6 @@ class MediaSender @Inject constructor(
                     fileInfo = uploadInfo.fileInfo,
                     caption = caption,
                     formattedCaption = formattedCaption,
-                    progressCallback = progressCallback,
                     inReplyToEventId = inReplyToEventId,
                 )
             }
@@ -197,6 +198,15 @@ class MediaSender @Inject constructor(
                 ongoingUploadJobs[Job] = uploadHandler
                 uploadHandler.await()
             }
+    }
+
+    private suspend fun getTimeline(): Result<Timeline> {
+        return when (timelineMode) {
+            is Timeline.Mode.Thread -> {
+                room.createTimeline(CreateTimelineParams.Threaded(threadRootEventId = timelineMode.threadRootId))
+            }
+            else -> Result.success(room.liveTimeline)
+        }
     }
 
     /**

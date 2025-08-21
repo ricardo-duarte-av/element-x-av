@@ -17,7 +17,6 @@ import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.DeviceId
-import io.element.android.libraries.matrix.api.core.ProgressCallback
 import io.element.android.libraries.matrix.api.core.RoomAlias
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.RoomIdOrAlias
@@ -49,7 +48,6 @@ import io.element.android.libraries.matrix.api.sync.SyncState
 import io.element.android.libraries.matrix.api.user.MatrixSearchUserResults
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
-import io.element.android.libraries.matrix.impl.core.toProgressWatcher
 import io.element.android.libraries.matrix.impl.encryption.RustEncryptionService
 import io.element.android.libraries.matrix.impl.exception.mapClientException
 import io.element.android.libraries.matrix.impl.media.RustMediaLoader
@@ -109,6 +107,7 @@ import org.matrix.rustcomponents.sdk.AuthDataPasswordDetails
 import org.matrix.rustcomponents.sdk.Client
 import org.matrix.rustcomponents.sdk.ClientException
 import org.matrix.rustcomponents.sdk.IgnoredUsersListener
+import org.matrix.rustcomponents.sdk.Membership
 import org.matrix.rustcomponents.sdk.NotificationProcessSetup
 import org.matrix.rustcomponents.sdk.PowerLevels
 import org.matrix.rustcomponents.sdk.RoomInfoListener
@@ -136,7 +135,7 @@ class RustMatrixClient(
     baseCacheDirectory: File,
     clock: SystemClock,
     timelineEventTypeFilterFactory: TimelineEventTypeFilterFactory,
-    featureFlagService: FeatureFlagService,
+    private val featureFlagService: FeatureFlagService,
 ) : MatrixClient {
     override val sessionId: UserId = UserId(innerClient.userId())
     override val deviceId: DeviceId = DeviceId(innerClient.deviceId())
@@ -205,9 +204,9 @@ class RustMatrixClient(
         roomContentForwarder = RoomContentForwarder(innerRoomListService),
         roomSyncSubscriber = roomSyncSubscriber,
         timelineEventTypeFilterFactory = timelineEventTypeFilterFactory,
-        featureFlagService = featureFlagService,
         roomMembershipObserver = roomMembershipObserver,
         roomInfoMapper = roomInfoMapper,
+        featureFlagService = featureFlagService,
     )
 
     override val mediaLoader: MatrixMediaLoader = RustMediaLoader(
@@ -279,11 +278,12 @@ class RustMatrixClient(
     }
 
     override suspend fun getRoom(roomId: RoomId): BaseRoom? = withContext(sessionDispatcher) {
+        innerClient.rooms()
         roomFactory.getBaseRoom(roomId)
     }
 
     override suspend fun getJoinedRoom(roomId: RoomId): JoinedRoom? = withContext(sessionDispatcher) {
-        (roomFactory.getJoinedRoomOrPreview(roomId) as? GetRoomResult.Joined)?.joinedRoom
+        (roomFactory.getJoinedRoomOrPreview(roomId, emptyList()) as? GetRoomResult.Joined)?.joinedRoom
     }
 
     /**
@@ -310,6 +310,15 @@ class RustMatrixClient(
     override suspend fun findDM(userId: UserId): Result<RoomId?> = withContext(sessionDispatcher) {
         runCatchingExceptions {
             innerClient.getDmRoom(userId.value)?.use { RoomId(it.id()) }
+        }
+    }
+
+    override suspend fun getJoinedRoomIds(): Result<Set<RoomId>> = withContext(sessionDispatcher) {
+        runCatchingExceptions {
+            innerClient.rooms()
+                .filter { it.membership() == Membership.JOINED }
+                .map { RoomId(it.id()) }
+                .toSet()
         }
     }
 
@@ -481,7 +490,7 @@ class RustMatrixClient(
                 is RoomIdOrAlias.Alias -> {
                     val roomId = innerClient.resolveRoomAlias(roomIdOrAlias.roomAlias.value)?.roomId?.let { RoomId(it) }
 
-                    var room = (roomId?.let { roomFactory.getJoinedRoomOrPreview(it) } as? GetRoomResult.NotJoined)?.notJoinedRoom
+                    var room = (roomId?.let { roomFactory.getJoinedRoomOrPreview(it, serverNames) } as? GetRoomResult.NotJoined)?.notJoinedRoom
                     if (room == null) {
                         val preview = innerClient.getRoomPreviewFromRoomAlias(roomIdOrAlias.roomAlias.value)
                         room = NotJoinedRustRoom(sessionId, null, RoomPreviewInfoMapper.map(preview.info()))
@@ -489,7 +498,7 @@ class RustMatrixClient(
                     room
                 }
                 is RoomIdOrAlias.Id -> {
-                    var room = (roomFactory.getJoinedRoomOrPreview(roomIdOrAlias.roomId) as? GetRoomResult.NotJoined)?.notJoinedRoom
+                    var room = (roomFactory.getJoinedRoomOrPreview(roomIdOrAlias.roomId, serverNames) as? GetRoomResult.NotJoined)?.notJoinedRoom
 
                     if (room == null) {
                         val preview = innerClient.getRoomPreviewFromRoomId(roomIdOrAlias.roomId.value, serverNames)
@@ -630,9 +639,9 @@ class RustMatrixClient(
         }
     }
 
-    override suspend fun uploadMedia(mimeType: String, data: ByteArray, progressCallback: ProgressCallback?): Result<String> = withContext(sessionDispatcher) {
+    override suspend fun uploadMedia(mimeType: String, data: ByteArray): Result<String> = withContext(sessionDispatcher) {
         runCatchingExceptions {
-            innerClient.uploadMedia(mimeType, data, progressCallback?.toProgressWatcher())
+            innerClient.uploadMedia(mimeType, data, progressWatcher = null)
         }
     }
 

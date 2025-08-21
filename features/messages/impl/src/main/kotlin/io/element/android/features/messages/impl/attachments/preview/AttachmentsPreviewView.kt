@@ -143,7 +143,7 @@ private fun AttachmentSendStateView(
         }
         is SendActionState.Sending.Uploading -> {
             ProgressDialog(
-                type = ProgressDialogType.Determinate(sendActionState.progress),
+                type = ProgressDialogType.Indeterminate,
                 text = stringResource(id = CommonStrings.common_sending),
                 showCancelButton = true,
                 onDismissRequest = onDismissClick,
@@ -363,17 +363,13 @@ private fun AttachmentsPreviewBottomActions(
         modifier = modifier,
         state = state.textEditorState,
         voiceMessageState = VoiceMessageState.Idle,
-        composerMode = MessageComposerMode.Attachment(
-            allowCaption = state.allowCaption,
-            showCaptionCompatibilityWarning = state.showCaptionCompatibilityWarning,
-        ),
+        composerMode = MessageComposerMode.Attachment,
         onRequestFocus = {},
         onSendMessage = onSendClick,
         showTextFormatting = false,
         onResetComposerMode = {},
         onAddAttachment = {},
         onDismissTextFormatting = {},
-        enableVoiceMessages = false,
         onVoiceRecorderEvent = {},
         onVoicePlayerEvent = {},
         onSendVoiceMessage = {},

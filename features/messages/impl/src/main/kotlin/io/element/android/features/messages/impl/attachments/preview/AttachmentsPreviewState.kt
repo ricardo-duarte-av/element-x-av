@@ -17,8 +17,6 @@ data class AttachmentsPreviewState(
     val attachment: Attachment,
     val sendActionState: SendActionState,
     val textEditorState: TextEditorState,
-    val allowCaption: Boolean,
-    val showCaptionCompatibilityWarning: Boolean,
     val mediaOptimizationSelectorState: MediaOptimizationSelectorState,
     val displayFileTooLargeError: Boolean,
     val eventSink: (AttachmentsPreviewEvents) -> Unit
@@ -32,7 +30,7 @@ sealed interface SendActionState {
     sealed interface Sending : SendActionState {
         data class Processing(val displayProgress: Boolean) : Sending
         data class ReadyToUpload(val mediaInfo: MediaUploadInfo) : Sending
-        data class Uploading(val progress: Float, val mediaUploadInfo: MediaUploadInfo) : Sending
+        data class Uploading(val mediaUploadInfo: MediaUploadInfo) : Sending
     }
 
     data class Failure(val error: Throwable, val mediaUploadInfo: MediaUploadInfo?) : SendActionState
