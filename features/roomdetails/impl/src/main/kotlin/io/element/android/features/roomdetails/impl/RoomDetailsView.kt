@@ -213,7 +213,7 @@ fun RoomDetailsView(
                 }
             }
 
-            if (state.roomType is RoomDetailsType.Room) {
+            if (state.roomType is RoomDetailsType.Room || state.memberCount > 2) {
                 PreferenceCategory {
                     MembersItem(
                         memberCount = state.memberCount,
