@@ -39,5 +39,5 @@ fun RoomMembersState.activeRoomMembers(): List<RoomMember> {
 fun RoomMembersState.getDirectRoomMember(roomInfo: RoomInfo, sessionId: SessionId): RoomMember? {
     return roomMembers()
         ?.takeIf { roomInfo.isDm }
-        ?.find { it.userId != sessionId && it.membership.isActive() }
+        ?.find { it.userId != sessionId && it.membership.isActive() && !it.userId.value.contains("bot:")}
 }
