@@ -36,7 +36,7 @@ plugins {
     alias(libs.plugins.licensee)
     alias(libs.plugins.kotlin.serialization)
     // To be able to update the firebase.xml files, uncomment and build the project
-    alias(libs.plugins.gms.google.services)
+    // alias(libs.plugins.gms.google.services)
 }
 
 setupKover()
@@ -45,8 +45,7 @@ android {
     namespace = "io.element.android.x"
 
     defaultConfig {
-        //applicationId = BuildTimeConfig.APPLICATION_ID
-        applicationId = "net.daedric.element"
+        applicationId = BuildTimeConfig.APPLICATION_ID
         targetSdk = Versions.TARGET_SDK
         versionCode = Versions.VERSION_CODE
         versionName = Versions.VERSION_NAME
@@ -102,9 +101,10 @@ android {
         }
     }
 
-    //val baseAppName = BuildTimeConfig.APPLICATION_NAME
-    val baseAppName = "Daedric.NET X"
-    logger.warnInBox("Building $baseAppName")
+    val baseAppName = BuildTimeConfig.APPLICATION_NAME
+    val buildType = if (isEnterpriseBuild) "Enterprise" else "FOSS"
+    logger.warnInBox("Building ${defaultConfig.applicationId} ($baseAppName) [$buildType]")
+
     buildTypes {
         val oidcRedirectSchemeBase = BuildTimeConfig.METADATA_HOST_REVERSED ?: "io.element.android"
         getByName("debug") {
