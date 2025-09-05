@@ -14,12 +14,13 @@ import com.bumble.appyx.core.node.Node
 import com.bumble.appyx.core.plugin.Plugin
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.Inject
-import io.element.android.anvilannotations.ContributesNode
+import io.element.android.annotations.ContributesNode
 import io.element.android.compound.theme.ForcedDarkElementTheme
 import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.libraries.architecture.NodeInputs
 import io.element.android.libraries.architecture.inputs
 import io.element.android.libraries.di.RoomScope
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.mediaviewer.api.local.LocalMediaRenderer
 
@@ -34,6 +35,7 @@ class AttachmentsPreviewNode(
     data class Inputs(
         val attachment: Attachment,
         val timelineMode: Timeline.Mode,
+        val inReplyToEventId: EventId?,
     ) : NodeInputs
 
     private val inputs: Inputs = inputs()
@@ -46,6 +48,7 @@ class AttachmentsPreviewNode(
         attachment = inputs.attachment,
         timelineMode = inputs.timelineMode,
         onDoneListener = onDoneListener,
+        inReplyToEventId = inputs.inReplyToEventId,
     )
 
     @Composable
