@@ -36,7 +36,7 @@ sealed interface MediaItem {
         val thumbnailSource: MediaSource?,
     ) : Event {
         val thumbnailMediaRequestData: MediaRequestData
-            get() = MediaRequestData(thumbnailSource ?: mediaSource, MediaRequestData.Kind.Thumbnail(250))
+            get() = MediaRequestData(thumbnailSource ?: mediaSource, MediaRequestData.Kind.Thumbnail(400))
     }
 
     data class Video(
@@ -47,7 +47,7 @@ sealed interface MediaItem {
         val thumbnailSource: MediaSource?,
     ) : Event {
         val thumbnailMediaRequestData: MediaRequestData
-            get() = MediaRequestData(thumbnailSource ?: mediaSource, MediaRequestData.Kind.Thumbnail(250))
+            get() = MediaRequestData(thumbnailSource ?: mediaSource, MediaRequestData.Kind.Thumbnail(400))
     }
 
     data class Audio(
