@@ -50,10 +50,10 @@ telephoto = "0.18.0"
 haze = "1.6.10"
 
 # Dependency analysis
-dependencyAnalysis = "3.1.0"
+dependencyAnalysis = "3.2.0"
 
 # DI
-metro = "0.7.0"
+metro = "0.7.2"
 
 # Auto service
 autoservice = "1.1.1"
@@ -211,7 +211,7 @@ color_picker = "io.mhssn:colorpicker:1.0.0"
 
 # Analytics
 posthog = "com.posthog:posthog-android:3.24.0"
-sentry = "io.sentry:sentry-android:8.23.0"
+sentry = "io.sentry:sentry-android:8.24.0"
 # main branch can be tested replacing the version with main-SNAPSHOT
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.28.0"
 
