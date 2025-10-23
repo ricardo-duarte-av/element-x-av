@@ -9,7 +9,6 @@ package io.element.android.libraries.push.impl
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.binding
 import io.element.android.libraries.matrix.api.MatrixClient
@@ -31,7 +30,6 @@ import timber.log.Timber
 
 @ContributesBinding(AppScope::class, binding = binding<PushService>())
 @SingleIn(AppScope::class)
-@Inject
 class DefaultPushService(
     private val testPush: TestPush,
     private val userPushStoreFactory: UserPushStoreFactory,
@@ -46,8 +44,8 @@ class DefaultPushService(
         observeSessions()
     }
 
-    override suspend fun getCurrentPushProvider(): PushProvider? {
-        val currentPushProvider = getCurrentPushProvider.getCurrentPushProvider()
+    override suspend fun getCurrentPushProvider(sessionId: SessionId): PushProvider? {
+        val currentPushProvider = getCurrentPushProvider.getCurrentPushProvider(sessionId)
         return pushProviders.find { it.name == currentPushProvider }
     }
 
@@ -99,9 +97,9 @@ class DefaultPushService(
         userPushStoreFactory.getOrCreate(sessionId).setIgnoreRegistrationError(ignore)
     }
 
-    override suspend fun testPush(): Boolean {
-        val pushProvider = getCurrentPushProvider() ?: return false
-        val config = pushProvider.getCurrentUserPushConfig() ?: return false
+    override suspend fun testPush(sessionId: SessionId): Boolean {
+        val pushProvider = getCurrentPushProvider(sessionId) ?: return false
+        val config = pushProvider.getPushConfig(sessionId) ?: return false
         testPush.execute(config)
         return true
     }
