@@ -17,6 +17,7 @@ import io.element.android.libraries.matrix.api.room.RoomMembershipState
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.ui.components.aMatrixUser
 import io.element.android.libraries.matrix.ui.components.aMatrixUserList
+import io.element.android.libraries.matrix.ui.room.PowerLevelRoomMemberComparator
 import io.element.android.libraries.previewutils.room.aRoomMember
 import io.element.android.libraries.previewutils.room.aRoomMemberList
 import kotlinx.collections.immutable.ImmutableList
@@ -36,11 +37,16 @@ class ChangeRolesStateProvider : PreviewParameterProvider<ChangeRolesState> {
             aChangeRolesStateWithSelectedUsers().copy(
                 query = "Alice",
                 isSearchActive = true,
-                searchResults = SearchBarResultState.Results(MembersByRole(aRoomMemberList().take(1).toImmutableList())),
+                searchResults = SearchBarResultState.Results(
+                    MembersByRole(
+                        members = aRoomMemberList().take(1),
+                        comparator = PowerLevelRoomMemberComparator(),
+                    )
+                ),
                 selectedUsers = aMatrixUserList().take(1).toImmutableList(),
             ),
             aChangeRolesStateWithSelectedUsers().copy(savingState = AsyncAction.ConfirmingCancellation),
-            aChangeRolesStateWithSelectedUsers().copy(savingState = AsyncAction.ConfirmingNoParams),
+            aChangeRolesStateWithSelectedUsers().copy(savingState = ConfirmingModifyingAdmins),
             aChangeRolesStateWithSelectedUsers().copy(savingState = AsyncAction.Loading),
             aChangeRolesStateWithSelectedUsers().copy(savingState = AsyncAction.Success(true)),
             aChangeRolesStateWithSelectedUsers().copy(savingState = AsyncAction.Failure(Exception("boom"))),
@@ -52,6 +58,8 @@ class ChangeRolesStateProvider : PreviewParameterProvider<ChangeRolesState> {
                 )
             ),
             aChangeRolesStateWithOwners(role = RoomMember.Role.Owner(isCreator = false)),
+            aChangeRolesStateWithOwners(role = RoomMember.Role.Owner(isCreator = false))
+                .copy(savingState = ConfirmingModifyingOwners),
         )
 }
 
@@ -87,7 +95,8 @@ internal fun aChangeRolesStateWithSelectedUsers() = aChangeRolesState(
                 } else {
                     roomMember
                 }
-            }
+            },
+            comparator = PowerLevelRoomMemberComparator(),
         )
     ),
     hasPendingChanges = true,
@@ -126,7 +135,8 @@ internal fun aChangeRolesStateWithOwners(
                     displayName = "David",
                     role = RoomMember.Role.User,
                 ),
-            )
+            ),
+            comparator = PowerLevelRoomMemberComparator(),
         ),
     ),
     canRemoveMember = { userId ->
