@@ -27,7 +27,6 @@ import io.element.android.features.rolesandpermissions.impl.RoomMemberListDataSo
 import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.architecture.runUpdatingState
-import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.designsystem.theme.components.SearchBarResultState
 import io.element.android.libraries.di.annotations.RoomCoroutineScope
 import io.element.android.libraries.matrix.api.core.UserId
@@ -44,6 +43,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -53,7 +54,7 @@ import kotlinx.coroutines.launch
 class ChangeRolesPresenter(
     @Assisted private val role: RoomMember.Role,
     private val room: JoinedRoom,
-    private val dispatchers: CoroutineDispatchers,
+    private val dataSource: RoomMemberListDataSource,
     private val analyticsService: AnalyticsService,
     @RoomCoroutineScope private val roomCoroutineScope: CoroutineScope,
 ) : Presenter<ChangeRolesState> {
@@ -66,7 +67,6 @@ class ChangeRolesPresenter(
 
     @Composable
     override fun present(): ChangeRolesState {
-        val dataSource = remember { RoomMemberListDataSource(room, dispatchers) }
         var query by rememberSaveable { mutableStateOf<String?>(null) }
         var searchActive by rememberSaveable { mutableStateOf(false) }
         var searchResults by remember {
@@ -77,7 +77,23 @@ class ChangeRolesPresenter(
         }
         val saveState: MutableState<AsyncAction<Boolean>> = remember { mutableStateOf(AsyncAction.Uninitialized) }
         val usersWithRole = produceState<ImmutableList<MatrixUser>>(initialValue = persistentListOf()) {
-            room.usersWithRole(role).map { members -> members.map { it.toMatrixUser() } }
+            // If the role is admin, we need to include the owners as well since they implicitly have admin role
+            val owners = if (role == RoomMember.Role.Admin) {
+                combine(
+                    room.usersWithRole(RoomMember.Role.Owner(isCreator = true)),
+                    room.usersWithRole(RoomMember.Role.Owner(isCreator = false)),
+                ) { creators, superAdmins ->
+                    creators + superAdmins
+                }
+            } else {
+                emptyFlow()
+            }
+            combine(
+                owners,
+                room.usersWithRole(role),
+            ) { owners, users ->
+                owners + users
+            }.map { members -> members.map { it.toMatrixUser() } }
                 .onEach { users ->
                     val previous = value
                     value = users.toImmutableList()
