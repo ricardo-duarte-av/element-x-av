@@ -10,6 +10,7 @@ package io.element.android.features.rolesandpermissions.impl.roles
 
 import com.google.common.truth.Truth.assertThat
 import im.vector.app.features.analytics.plan.RoomModeration
+import io.element.android.features.rolesandpermissions.impl.RoomMemberListDataSource
 import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.designsystem.theme.components.SearchBarResultState
@@ -106,6 +107,7 @@ class ChangeRolesPresenterTest {
             awaitItem().run {
                 assertThat(canChangeMemberRole(A_USER_ID_2)).isTrue() // Admin
                 assertThat(canChangeMemberRole(A_USER_ID_3)).isTrue() // Moderator
+                assertThat(canChangeMemberRole(superAdminUserId)).isTrue() // Super admin
                 assertThat(canChangeMemberRole(creatorUserId)).isFalse() // Owner
             }
         }
@@ -170,7 +172,7 @@ class ChangeRolesPresenterTest {
         }
         val presenter = createChangeRolesPresenter(room = room)
         presenter.test {
-            skipItems(1)
+            skipItems(2)
             awaitItem().searchResults.run {
                 assertThat(this).isInstanceOf(SearchBarResultState.Results::class.java)
                 val results = (this as SearchBarResultState.Results).results
@@ -424,11 +426,14 @@ class ChangeRolesPresenterTest {
             analyticsService = analyticsService
         )
         presenter.test {
-            skipItems(2)
+            skipItems(1)
             val initialState = awaitItem()
-            assertThat(initialState.selectedUsers).hasSize(1)
+            assertThat(initialState.selectedUsers).isEmpty()
             initialState.eventSink(ChangeRolesEvent.UserSelectionToggled(MatrixUser(A_USER_ID_2)))
-            awaitItem().eventSink(ChangeRolesEvent.Save)
+            awaitItem().also {
+                assertThat(it.selectedUsers).hasSize(1)
+                it.eventSink(ChangeRolesEvent.Save)
+            }
             assertThat(awaitItem().savingState).isInstanceOf(AsyncAction.Loading::class.java)
             assertThat(awaitItem().savingState).isEqualTo(AsyncAction.Success(true))
             assertThat(analyticsService.capturedEvents.last()).isEqualTo(RoomModeration(RoomModeration.Action.ChangeMemberRole, RoomModeration.Role.Moderator))
@@ -459,14 +464,13 @@ class ChangeRolesPresenterTest {
             analyticsService = analyticsService
         )
         presenter.test {
-            skipItems(1)
             val initialState = awaitItem()
-            assertThat(initialState.selectedUsers).hasSize(1)
-
+            assertThat(initialState.selectedUsers).isEmpty()
             initialState.eventSink(ChangeRolesEvent.UserSelectionToggled(MatrixUser(A_USER_ID_2)))
-
-            awaitItem().eventSink(ChangeRolesEvent.Save)
-
+            awaitItem().also {
+                assertThat(it.selectedUsers).hasSize(1)
+                it.eventSink(ChangeRolesEvent.Save)
+            }
             assertThat(awaitItem().savingState.isConfirming()).isTrue()
         }
     }
@@ -494,12 +498,12 @@ class ChangeRolesPresenterTest {
         presenter.test {
             skipItems(2)
             val initialState = awaitItem()
-            assertThat(initialState.selectedUsers).hasSize(1)
-
+            assertThat(initialState.selectedUsers).hasSize(2)
             initialState.eventSink(ChangeRolesEvent.UserSelectionToggled(MatrixUser(A_USER_ID_2)))
-
-            awaitItem().eventSink(ChangeRolesEvent.Save)
-
+            awaitItem().also {
+                assertThat(it.selectedUsers).hasSize(1)
+                it.eventSink(ChangeRolesEvent.Save)
+            }
             val loadingState = awaitItem()
             assertThat(loadingState.savingState).isInstanceOf(AsyncAction.Loading::class.java)
             assertThat(awaitItem().savingState).isEqualTo(AsyncAction.Success(true))
@@ -517,20 +521,32 @@ class ChangeRolesPresenterTest {
         }
         val presenter = createChangeRolesPresenter(role = RoomMember.Role.Moderator, room = room)
         presenter.test {
-            skipItems(2)
+            skipItems(1)
             val initialState = awaitItem()
-            assertThat(initialState.selectedUsers).hasSize(1)
-
+            assertThat(initialState.selectedUsers).isEmpty()
             initialState.eventSink(ChangeRolesEvent.UserSelectionToggled(MatrixUser(A_USER_ID_2)))
-
-            awaitItem().eventSink(ChangeRolesEvent.Save)
+            awaitItem().also {
+                assertThat(it.selectedUsers).hasSize(1)
+                it.eventSink(ChangeRolesEvent.Save)
+            }
             val loadingState = awaitItem()
             assertThat(loadingState.savingState).isInstanceOf(AsyncAction.Loading::class.java)
             val failedState = awaitItem()
             assertThat(failedState.savingState).isInstanceOf(AsyncAction.Failure::class.java)
-
             failedState.eventSink(ChangeRolesEvent.CloseDialog)
             assertThat(awaitItem().savingState).isEqualTo(AsyncAction.Uninitialized)
+        }
+    }
+
+    @Test
+    fun `test analytics mapping`() = runTest {
+        val presenter = createChangeRolesPresenter()
+        with(presenter) {
+            assertThat(RoomMember.Role.User.toAnalyticsMemberRole()).isEqualTo(RoomModeration.Role.User)
+            assertThat(RoomMember.Role.Moderator.toAnalyticsMemberRole()).isEqualTo(RoomModeration.Role.Moderator)
+            assertThat(RoomMember.Role.Admin.toAnalyticsMemberRole()).isEqualTo(RoomModeration.Role.Administrator)
+            assertThat(RoomMember.Role.Owner(isCreator = false).toAnalyticsMemberRole()).isEqualTo(RoomModeration.Role.Administrator)
+            assertThat(RoomMember.Role.Owner(isCreator = true).toAnalyticsMemberRole()).isEqualTo(RoomModeration.Role.Administrator)
         }
     }
 
@@ -561,7 +577,7 @@ internal fun TestScope.createChangeRolesPresenter(
     return ChangeRolesPresenter(
         role = role,
         room = room,
-        dispatchers = dispatchers,
+        dataSource = RoomMemberListDataSource(room, dispatchers),
         analyticsService = analyticsService,
         roomCoroutineScope = this,
     )
