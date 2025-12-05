@@ -1,7 +1,8 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -14,7 +15,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.media.ImageInfo
 import io.element.android.libraries.matrix.api.media.MediaSource
-import io.element.android.libraries.matrix.api.timeline.item.EventThreadInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.EmoteMessageType
 import io.element.android.libraries.matrix.api.timeline.item.event.EventContent
@@ -44,7 +44,7 @@ import io.element.android.libraries.matrix.test.media.aMediaSource
 import io.element.android.libraries.matrix.test.permalink.FakePermalinkParser
 import io.element.android.libraries.matrix.test.timeline.aPollContent
 import io.element.android.libraries.matrix.test.timeline.aProfileChangeMessageContent
-import io.element.android.libraries.matrix.test.timeline.aProfileTimelineDetails
+import io.element.android.libraries.matrix.test.timeline.aProfileDetails
 import io.element.android.libraries.matrix.test.timeline.aStickerContent
 import io.element.android.libraries.matrix.test.timeline.anEventTimelineItem
 import io.element.android.libraries.matrix.test.timeline.item.event.aRoomMembershipContent
@@ -130,7 +130,7 @@ class DefaultPinnedMessagesBannerFormatterTest {
     fun `Message contents`() {
         val body = "Shared body"
         fun createMessageContent(type: MessageType): MessageContent {
-            return MessageContent(body, null, false, EventThreadInfo(null, null), type)
+            return MessageContent(body, null, false, null, type)
         }
 
         val sharedContentMessagesTypes = arrayOf(
@@ -601,7 +601,7 @@ class DefaultPinnedMessagesBannerFormatterTest {
             OtherState.RoomCanonicalAlias,
             OtherState.RoomGuestAccess,
             OtherState.RoomHistoryVisibility,
-            OtherState.RoomJoinRules,
+            OtherState.RoomJoinRules(null),
             OtherState.RoomPinnedEvents(OtherState.RoomPinnedEvents.Change.CHANGED),
             OtherState.RoomUserPowerLevels(emptyMap()),
             OtherState.RoomServerAcl,
@@ -778,7 +778,7 @@ class DefaultPinnedMessagesBannerFormatterTest {
         content: EventContent,
     ): EventTimelineItem {
         val sender = if (sentByYou) A_USER_ID else someoneElseId
-        val profile = aProfileTimelineDetails(senderDisplayName)
+        val profile = aProfileDetails(senderDisplayName)
         return anEventTimelineItem(
             content = content,
             senderProfile = profile,

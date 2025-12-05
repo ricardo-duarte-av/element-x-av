@@ -1,25 +1,24 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
 package io.element.android.libraries.matrix.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
-import io.element.android.compound.theme.ElementTheme
+import io.element.android.libraries.designsystem.atomic.atoms.RoomPreviewDescriptionAtom
+import io.element.android.libraries.designsystem.atomic.atoms.RoomPreviewTitleAtom
+import io.element.android.libraries.designsystem.atomic.organisms.RoomPreviewOrganism
 import io.element.android.libraries.designsystem.components.avatar.Avatar
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
@@ -27,8 +26,9 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.avatar.anAvatarData
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
-import io.element.android.libraries.matrix.api.room.join.JoinRule
+import io.element.android.libraries.matrix.api.spaces.SpaceRoomVisibility
 import io.element.android.libraries.matrix.api.user.MatrixUser
+import io.element.android.libraries.ui.strings.CommonStrings
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -40,54 +40,56 @@ fun SpaceHeaderView(
     avatarData: AvatarData,
     name: String?,
     topic: String?,
-    joinRule: JoinRule?,
+    visibility: SpaceRoomVisibility,
     heroes: ImmutableList<MatrixUser>,
     numberOfMembers: Int,
-    numberOfRooms: Int,
     modifier: Modifier = Modifier,
     topicMaxLines: Int = Int.MAX_VALUE,
+    onTopicClick: ((String) -> Unit)? = null,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 32.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Avatar(
-            avatarData = avatarData,
-            avatarType = AvatarType.Space(false),
-        )
-        name?.let {
-            Text(
-                text = name,
-                style = ElementTheme.typography.fontHeadingLgBold,
-                color = ElementTheme.colors.textPrimary,
-                textAlign = TextAlign.Center,
+    RoomPreviewOrganism(
+        modifier = modifier.padding(24.dp),
+        avatar = {
+            Avatar(
+                avatarData = avatarData,
+                avatarType = AvatarType.Space(),
             )
-        }
-        if (joinRule != null) {
-            SpaceInfoRow(
-                joinRule = joinRule,
-                numberOfRooms = numberOfRooms,
+        },
+        title = {
+            if (name != null) {
+                RoomPreviewTitleAtom(title = name)
+            } else {
+                RoomPreviewTitleAtom(
+                    title = stringResource(id = CommonStrings.common_no_space_name),
+                    fontStyle = FontStyle.Italic
+                )
+            }
+        },
+        subtitle = {
+            SpaceInfoRow(visibility = visibility)
+        },
+        description = if (topic.isNullOrBlank()) {
+            null
+        } else {
+            {
+                RoomPreviewDescriptionAtom(
+                    description = topic,
+                    maxLines = topicMaxLines,
+                    modifier = Modifier.clickable(
+                        enabled = onTopicClick != null,
+                        onClick = { onTopicClick?.invoke(topic) }
+                    )
+                )
+            }
+        },
+        memberCount = {
+            SpaceMembersView(
+                heroes = heroes,
+                numberOfMembers = numberOfMembers,
+                modifier = Modifier.padding(horizontal = 32.dp),
             )
-        }
-        SpaceMembersView(
-            heroes = heroes,
-            numberOfMembers = numberOfMembers,
-            modifier = Modifier.padding(horizontal = 32.dp),
-        )
-        topic?.let {
-            Text(
-                text = topic,
-                style = ElementTheme.typography.fontBodyMdRegular,
-                color = ElementTheme.colors.textPrimary,
-                textAlign = TextAlign.Center,
-                maxLines = topicMaxLines,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
+        },
+    )
 }
 
 @PreviewsDayNight
@@ -101,7 +103,7 @@ internal fun SpaceHeaderViewPreview() = ElementPreview {
         name = "Space name",
         topic = "Space topic: " + LoremIpsum(40).values.first(),
         topicMaxLines = 2,
-        joinRule = JoinRule.Public,
+        visibility = SpaceRoomVisibility.Public,
         heroes = persistentListOf(
             aMatrixUser(id = "@1:d", displayName = "Alice", avatarUrl = "aUrl"),
             aMatrixUser(id = "@2:d", displayName = "Bob"),
@@ -109,6 +111,5 @@ internal fun SpaceHeaderViewPreview() = ElementPreview {
             aMatrixUser(id = "@4:d", displayName = "Dave"),
         ),
         numberOfMembers = 999,
-        numberOfRooms = 10,
     )
 }

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -14,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.permissions.api.PermissionStateProvider
@@ -25,7 +26,7 @@ import io.element.android.services.toolbox.api.sdk.BuildVersionSdkIntProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@Inject
+@AssistedInject
 class NotificationsOptInPresenter(
     permissionsPresenterFactory: PermissionsPresenter.Factory,
     @Assisted private val callback: NotificationsOptInNode.Callback,
@@ -51,7 +52,7 @@ class NotificationsOptInPresenter(
     override fun present(): NotificationsOptInState {
         val notificationsPermissionsState = postNotificationPermissionsPresenter.present()
 
-        fun handleEvents(event: NotificationsOptInEvents) {
+        fun handleEvent(event: NotificationsOptInEvents) {
             when (event) {
                 NotificationsOptInEvents.ContinueClicked -> {
                     if (notificationsPermissionsState.permissionGranted) {
@@ -78,7 +79,7 @@ class NotificationsOptInPresenter(
 
         return NotificationsOptInState(
             notificationsPermissionState = notificationsPermissionsState,
-            eventSink = ::handleEvents
+            eventSink = ::handleEvent,
         )
     }
 

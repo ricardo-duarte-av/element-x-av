@@ -1,14 +1,15 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
 package io.element.android.features.messages.impl.pinned.banner
 
 import com.google.common.truth.Truth.assertThat
-import io.element.android.features.messages.impl.pinned.PinnedEventsTimelineProvider
+import io.element.android.features.messages.impl.pinned.DefaultPinnedEventsTimelineProvider
 import io.element.android.libraries.eventformatter.test.FakePinnedMessagesBannerFormatter
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.sync.SyncService
@@ -178,10 +179,9 @@ class PinnedMessagesBannerPresenterTest {
         ),
         syncService: SyncService = FakeSyncService(),
     ): PinnedMessagesBannerPresenter {
-        val timelineProvider = PinnedEventsTimelineProvider(
+        val timelineProvider = createPinnedEventsTimelineProvider(
             room = room,
             syncService = syncService,
-            dispatchers = testCoroutineDispatchers(),
         )
         timelineProvider.launchIn(backgroundScope)
 
@@ -192,3 +192,12 @@ class PinnedMessagesBannerPresenterTest {
         )
     }
 }
+
+internal fun TestScope.createPinnedEventsTimelineProvider(
+    room: JoinedRoom = FakeJoinedRoom(),
+    syncService: SyncService = FakeSyncService(),
+) = DefaultPinnedEventsTimelineProvider(
+    room = room,
+    syncService = syncService,
+    dispatchers = testCoroutineDispatchers(),
+)

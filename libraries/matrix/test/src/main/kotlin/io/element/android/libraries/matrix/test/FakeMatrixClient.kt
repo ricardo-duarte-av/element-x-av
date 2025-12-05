@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,6 +10,7 @@ package io.element.android.libraries.matrix.test
 
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.DeviceId
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomAlias
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.RoomIdOrAlias
@@ -32,6 +34,7 @@ import io.element.android.libraries.matrix.api.roomdirectory.RoomDirectoryServic
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.spaces.SpaceService
 import io.element.android.libraries.matrix.api.sync.SlidingSyncVersion
+import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.user.MatrixSearchUserResults
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.api.verification.SessionVerificationService
@@ -68,15 +71,16 @@ class FakeMatrixClient(
     private val userAvatarUrl: String? = AN_AVATAR_URL,
     override val roomListService: RoomListService = FakeRoomListService(),
     override val spaceService: SpaceService = FakeSpaceService(),
-    override val mediaLoader: MatrixMediaLoader = FakeMatrixMediaLoader(),
-    private val sessionVerificationService: FakeSessionVerificationService = FakeSessionVerificationService(),
-    private val pushersService: FakePushersService = FakePushersService(),
-    private val notificationService: FakeNotificationService = FakeNotificationService(),
-    private val notificationSettingsService: FakeNotificationSettingsService = FakeNotificationSettingsService(),
-    private val syncService: FakeSyncService = FakeSyncService(),
-    private val encryptionService: FakeEncryptionService = FakeEncryptionService(),
-    private val roomDirectoryService: RoomDirectoryService = FakeRoomDirectoryService(),
-    private val mediaPreviewService: MediaPreviewService = FakeMediaPreviewService(),
+    override val matrixMediaLoader: MatrixMediaLoader = FakeMatrixMediaLoader(),
+    override val sessionVerificationService: SessionVerificationService = FakeSessionVerificationService(),
+    override val pushersService: PushersService = FakePushersService(),
+    override val notificationService: NotificationService = FakeNotificationService(),
+    override val notificationSettingsService: NotificationSettingsService = FakeNotificationSettingsService(),
+    override val syncService: SyncService = FakeSyncService(),
+    override val encryptionService: EncryptionService = FakeEncryptionService(),
+    override val roomDirectoryService: RoomDirectoryService = FakeRoomDirectoryService(),
+    override val mediaPreviewService: MediaPreviewService = FakeMediaPreviewService(),
+    override val roomMembershipObserver: RoomMembershipObserver = RoomMembershipObserver(),
     private val accountManagementUrlResult: (AccountManagementAction?) -> Result<String?> = { lambdaError() },
     private val resolveRoomAliasResult: (RoomAlias) -> Result<Optional<ResolvedRoomAlias>> = {
         Result.success(
@@ -97,6 +101,9 @@ class FakeMatrixClient(
     override val ignoredUsersFlow: StateFlow<ImmutableList<UserId>> = MutableStateFlow(persistentListOf()),
     private val getMaxUploadSizeResult: () -> Result<Long> = { lambdaError() },
     private val getJoinedRoomIdsResult: () -> Result<Set<RoomId>> = { Result.success(emptySet()) },
+    private val getRecentEmojisLambda: () -> Result<List<String>> = { Result.success(emptyList()) },
+    private val addRecentEmojiLambda: (String) -> Result<Unit> = { Result.success(Unit) },
+    private val markRoomAsFullyReadResult: (RoomId, EventId) -> Result<Unit> = { _, _ -> lambdaError() },
 ) : MatrixClient {
     var setDisplayNameCalled: Boolean = false
         private set
@@ -172,10 +179,6 @@ class FakeMatrixClient(
         return searchUserResults[searchTerm] ?: Result.failure(IllegalStateException("No response defined for $searchTerm"))
     }
 
-    override fun syncService() = syncService
-
-    override fun roomDirectoryService() = roomDirectoryService
-
     override suspend fun getCacheSize(): Long {
         return 0
     }
@@ -234,19 +237,6 @@ class FakeMatrixClient(
 
     override suspend fun knockRoom(roomIdOrAlias: RoomIdOrAlias, message: String, serverNames: List<String>): Result<RoomInfo?> {
         return knockRoomLambda(roomIdOrAlias, message, serverNames)
-    }
-
-    override fun sessionVerificationService(): SessionVerificationService = sessionVerificationService
-
-    override fun pushersService(): PushersService = pushersService
-
-    override fun notificationService(): NotificationService = notificationService
-    override fun notificationSettingsService(): NotificationSettingsService = notificationSettingsService
-    override fun encryptionService(): EncryptionService = encryptionService
-    override fun mediaPreviewService(): MediaPreviewService = mediaPreviewService
-
-    override fun roomMembershipObserver(): RoomMembershipObserver {
-        return RoomMembershipObserver()
     }
 
     // Mocks
@@ -348,5 +338,17 @@ class FakeMatrixClient(
 
     override suspend fun getMaxFileUploadSize(): Result<Long> {
         return getMaxUploadSizeResult()
+    }
+
+    override suspend fun addRecentEmoji(emoji: String): Result<Unit> {
+        return addRecentEmojiLambda(emoji)
+    }
+
+    override suspend fun getRecentEmojis(): Result<List<String>> {
+        return getRecentEmojisLambda()
+    }
+
+    override suspend fun markRoomAsFullyRead(roomId: RoomId, eventId: EventId): Result<Unit> {
+        return markRoomAsFullyReadResult(roomId, eventId)
     }
 }

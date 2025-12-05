@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -177,23 +178,23 @@ class StartChatPresenterTest {
             }
         }
     }
+}
 
-    private fun createStartChatPresenter(
-        startDMAction: StartDMAction = FakeStartDMAction(),
-        isRoomDirectorySearchEnabled: Boolean = false,
-    ): StartChatPresenter {
-        val featureFlagService = FakeFeatureFlagService(
-            initialState = mapOf(
-                FeatureFlags.RoomDirectorySearch.key to isRoomDirectorySearchEnabled,
-            ),
-        )
-        return StartChatPresenter(
-            presenterFactory = FakeUserListPresenterFactory(FakeUserListPresenter()),
-            userRepository = FakeUserRepository(),
-            userListDataStore = UserListDataStore(),
-            startDMAction = startDMAction,
-            featureFlagService = featureFlagService,
-            buildMeta = aBuildMeta(),
-        )
-    }
+internal fun createStartChatPresenter(
+    startDMAction: StartDMAction = FakeStartDMAction(),
+    isRoomDirectorySearchEnabled: Boolean = false,
+): StartChatPresenter {
+    val featureFlagService = FakeFeatureFlagService(
+        initialState = mapOf(
+            FeatureFlags.RoomDirectorySearch.key to isRoomDirectorySearchEnabled,
+        ),
+    )
+    return StartChatPresenter(
+        presenterFactory = FakeUserListPresenterFactory(FakeUserListPresenter()),
+        userRepository = FakeUserRepository(),
+        userListDataStore = UserListDataStore(),
+        startDMAction = startDMAction,
+        featureFlagService = featureFlagService,
+        buildMeta = aBuildMeta(),
+    )
 }

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -68,14 +69,6 @@ object MatrixPatterns {
             str.length <= MAX_IDENTIFIER_LENGTH &&
             str matches PATTERN_CONTAIN_MATRIX_USER_IDENTIFIER
     }
-
-    /**
-     * Tells if a string is a valid space id. This is an alias for [isRoomId]
-     *
-     * @param str the string to test
-     * @return true if the string is a valid space Id
-     */
-    fun isSpaceId(str: String?) = isRoomId(str)
 
     /**
      * Tells if a string is a valid room id.

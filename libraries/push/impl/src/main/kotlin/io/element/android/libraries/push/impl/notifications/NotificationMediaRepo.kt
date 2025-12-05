@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -10,8 +11,8 @@ package io.element.android.libraries.push.impl.notifications
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import io.element.android.libraries.core.extensions.mapCatchingExceptions
 import io.element.android.libraries.di.CacheDirectory
 import io.element.android.libraries.matrix.api.MatrixClient
@@ -58,7 +59,7 @@ interface NotificationMediaRepo {
     ): Result<File>
 }
 
-@Inject
+@AssistedInject
 class DefaultNotificationMediaRepo(
     @CacheDirectory private val cacheDir: File,
     private val mxcTools: MxcTools,
@@ -72,7 +73,7 @@ class DefaultNotificationMediaRepo(
         ): DefaultNotificationMediaRepo
     }
 
-    private val matrixMediaLoader = client.mediaLoader
+    private val matrixMediaLoader = client.matrixMediaLoader
 
     override suspend fun getMediaFile(
         mediaSource: MediaSource,

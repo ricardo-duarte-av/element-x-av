@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -31,9 +32,17 @@ class LoggedInEventProcessor(
         observingJob = roomMembershipObserver.updates
             .filter { !it.isUserInRoom }
             .distinctUntilChanged()
-            .onEach {
-                when (it.change) {
-                    MembershipChange.LEFT -> displayMessage(CommonStrings.common_current_user_left_room)
+            .onEach { roomMemberShipUpdate ->
+                when (roomMemberShipUpdate.change) {
+                    MembershipChange.LEFT -> {
+                        displayMessage(
+                            if (roomMemberShipUpdate.isSpace) {
+                                CommonStrings.common_current_user_left_space
+                            } else {
+                                CommonStrings.common_current_user_left_room
+                            }
+                        )
+                    }
                     MembershipChange.INVITATION_REJECTED -> displayMessage(CommonStrings.common_current_user_rejected_invite)
                     MembershipChange.KNOCK_RETRACTED -> displayMessage(CommonStrings.common_current_user_canceled_knock)
                     else -> Unit

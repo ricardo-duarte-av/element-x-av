@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -24,7 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.PinUnpinAction
 import io.element.android.appconfig.MessageComposerConfig
 import io.element.android.features.messages.api.timeline.HtmlConverterProvider
@@ -33,9 +34,10 @@ import io.element.android.features.messages.impl.actionlist.ActionListState
 import io.element.android.features.messages.impl.actionlist.model.TimelineItemAction
 import io.element.android.features.messages.impl.crypto.identity.IdentityChangeState
 import io.element.android.features.messages.impl.link.LinkState
-import io.element.android.features.messages.impl.messagecomposer.MessageComposerEvents
+import io.element.android.features.messages.impl.messagecomposer.MessageComposerEvent
 import io.element.android.features.messages.impl.messagecomposer.MessageComposerState
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerState
+import io.element.android.features.messages.impl.timeline.MarkAsFullyRead
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.timeline.TimelineEvents
 import io.element.android.features.messages.impl.timeline.TimelineState
@@ -43,6 +45,7 @@ import io.element.android.features.messages.impl.timeline.components.customreact
 import io.element.android.features.messages.impl.timeline.components.reactionsummary.ReactionSummaryState
 import io.element.android.features.messages.impl.timeline.components.receipt.bottomsheet.ReadReceiptBottomSheetState
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
+import io.element.android.features.messages.impl.timeline.model.TimelineItemThreadInfo
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContentWithAttachment
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemPollContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemStateContent
@@ -56,6 +59,7 @@ import io.element.android.libraries.androidutils.clipboard.ClipboardHelper
 import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
+import io.element.android.libraries.core.extensions.flatMap
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.core.meta.BuildMeta
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
@@ -63,6 +67,7 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarMessage
 import io.element.android.libraries.designsystem.utils.snackbar.collectSnackbarMessageAsState
+import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.core.toThreadId
@@ -78,21 +83,22 @@ import io.element.android.libraries.matrix.api.room.powerlevels.canPinUnpin
 import io.element.android.libraries.matrix.api.room.powerlevels.canRedactOther
 import io.element.android.libraries.matrix.api.room.powerlevels.canRedactOwn
 import io.element.android.libraries.matrix.api.room.powerlevels.canSendMessage
-import io.element.android.libraries.matrix.api.sync.SyncService
 import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransactionId
 import io.element.android.libraries.matrix.ui.messages.reply.map
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.room.getDirectRoomMember
+import io.element.android.libraries.recentemojis.api.AddRecentEmoji
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.services.analytics.api.AnalyticsService
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
-@Inject
+@AssistedInject
 class MessagesPresenter(
     @Assisted private val navigator: MessagesNavigator,
     private val room: JoinedRoom,
@@ -109,7 +115,6 @@ class MessagesPresenter(
     private val pinnedMessagesBannerPresenter: Presenter<PinnedMessagesBannerState>,
     private val roomCallStatePresenter: Presenter<RoomCallState>,
     private val roomMemberModerationPresenter: Presenter<RoomMemberModerationState>,
-    private val syncService: SyncService,
     private val snackbarDispatcher: SnackbarDispatcher,
     private val dispatchers: CoroutineDispatchers,
     private val clipboardHelper: ClipboardHelper,
@@ -120,6 +125,9 @@ class MessagesPresenter(
     private val analyticsService: AnalyticsService,
     private val encryptionService: EncryptionService,
     private val featureFlagService: FeatureFlagService,
+    private val addRecentEmoji: AddRecentEmoji,
+    private val markAsFullyRead: MarkAsFullyRead,
+    @SessionCoroutineScope private val sessionCoroutineScope: CoroutineScope,
 ) : Presenter<MessagesState> {
     @AssistedFactory
     interface Factory {
@@ -136,10 +144,13 @@ class MessagesPresenter(
         timelineMode = timelineController.mainTimelineMode()
     )
 
+    private val markingAsReadAndExiting = AtomicBoolean(false)
+
     @Composable
     override fun present(): MessagesState {
         htmlConverterProvider.Update()
 
+        val coroutineScope = rememberCoroutineScope()
         val roomInfo by room.roomInfoFlow.collectAsState()
         val localCoroutineScope = rememberCoroutineScope()
         val composerState = composerPresenter.present()
@@ -162,7 +173,7 @@ class MessagesPresenter(
             derivedStateOf { roomInfo.avatarData() }
         }
         val heroes by remember {
-            derivedStateOf { roomInfo.heroes().toPersistentList() }
+            derivedStateOf { roomInfo.heroes().toImmutableList() }
         }
 
         var hasDismissedInviteDialog by rememberSaveable {
@@ -189,7 +200,6 @@ class MessagesPresenter(
                 showReinvitePrompt = !hasDismissedInviteDialog && composerHasFocus && roomInfo.isDm && roomInfo.activeMembersCount == 1L
             }
         }
-        val isOnline by syncService.isOnline.collectAsState()
 
         val snackbarMessage by snackbarDispatcher.collectSnackbarMessageAsState()
 
@@ -212,7 +222,7 @@ class MessagesPresenter(
             onPauseOrDispose {}
         }
 
-        fun handleEvents(event: MessagesEvents) {
+        fun handleEvent(event: MessagesEvents) {
             when (event) {
                 is MessagesEvents.HandleAction -> {
                     localCoroutineScope.handleTimelineAction(
@@ -238,6 +248,22 @@ class MessagesPresenter(
                 is MessagesEvents.OnUserClicked -> {
                     roomMemberModerationState.eventSink(RoomMemberModerationEvents.ShowActionsForUser(event.user))
                 }
+                is MessagesEvents.MarkAsFullyReadAndExit -> coroutineScope.launch {
+                    if (!markingAsReadAndExiting.getAndSet(true)) {
+                        val latestEventId = room.liveTimeline.getLatestEventId().getOrElse {
+                            Timber.w(it, "Failed to get latest event id to mark as fully read")
+                            navigator.close()
+                            return@launch
+                        }
+                        latestEventId?.let { eventId ->
+                            sessionCoroutineScope.launch {
+                                markAsFullyRead(room.roomId, eventId)
+                            }
+                        }
+                        navigator.close()
+                        markingAsReadAndExiting.set(false)
+                    }
+                }
             }
         }
 
@@ -246,8 +272,8 @@ class MessagesPresenter(
             roomName = roomInfo.name,
             roomAvatar = roomAvatar,
             heroes = heroes,
-            composerState = composerState,
             userEventPermissions = userEventPermissions,
+            composerState = composerState,
             voiceMessageComposerState = voiceMessageComposerState,
             timelineState = timelineState,
             timelineProtectionState = timelineProtectionState,
@@ -257,18 +283,17 @@ class MessagesPresenter(
             customReactionState = customReactionState,
             reactionSummaryState = reactionSummaryState,
             readReceiptBottomSheetState = readReceiptBottomSheetState,
-            hasNetworkConnection = isOnline,
             snackbarMessage = snackbarMessage,
-            showReinvitePrompt = showReinvitePrompt,
             inviteProgress = inviteProgress.value,
+            showReinvitePrompt = showReinvitePrompt,
             enableTextFormatting = MessageComposerConfig.ENABLE_RICH_TEXT_EDITING,
-            appName = buildMeta.applicationName,
             roomCallState = roomCallState,
+            appName = buildMeta.applicationName,
             pinnedMessagesBannerState = pinnedMessagesBannerState,
             dmUserVerificationState = dmUserVerificationState,
             roomMemberModerationState = roomMemberModerationState,
             successorRoom = roomInfo.successorRoom,
-            eventSink = { handleEvents(it) }
+            eventSink = ::handleEvent,
         )
     }
 
@@ -281,8 +306,8 @@ class MessagesPresenter(
         }
         return produceState(UserEventPermissions.DEFAULT, key1 = key) {
             value = UserEventPermissions(
-                canSendMessage = room.canSendMessage(type = MessageEventType.ROOM_MESSAGE).getOrElse { true },
-                canSendReaction = room.canSendMessage(type = MessageEventType.REACTION).getOrElse { true },
+                canSendMessage = room.canSendMessage(type = MessageEventType.RoomMessage).getOrElse { true },
+                canSendReaction = room.canSendMessage(type = MessageEventType.Reaction).getOrElse { true },
                 canRedactOwn = room.canRedactOwn().getOrElse { false },
                 canRedactOther = room.canRedactOther().getOrElse { false },
                 canPinUnpin = room.canPinUnpin().getOrElse { false },
@@ -328,8 +353,11 @@ class MessagesPresenter(
                 val displayThreads = featureFlagService.isFeatureEnabled(FeatureFlags.Threads)
                 if (displayThreads) {
                     // Get either the thread id this event is in, or the event id if it's not in a thread so we can start one
-                    val threadId = targetEvent.threadInfo.threadRootId ?: targetEvent.eventId!!.toThreadId()
-                    navigator.onOpenThread(threadId, null)
+                    val threadId = when (targetEvent.threadInfo) {
+                        is TimelineItemThreadInfo.ThreadResponse -> targetEvent.threadInfo.threadRootId
+                        is TimelineItemThreadInfo.ThreadRoot, null -> targetEvent.eventId?.toThreadId()
+                    } ?: return@launch
+                    navigator.navigateToThread(threadId, null)
                 } else {
                     handleActionReply(targetEvent, composerState, timelineProtectionState)
                 }
@@ -394,6 +422,7 @@ class MessagesPresenter(
     ) = launch(dispatchers.io) {
         timelineController.invokeOnCurrentTimeline {
             toggleReaction(emoji, eventOrTransactionId)
+                .flatMap { added -> if (added) addRecentEmoji(emoji) else Result.success(Unit) }
                 .onFailure { Timber.e(it) }
         }
     }
@@ -436,7 +465,7 @@ class MessagesPresenter(
         when (targetEvent.content) {
             is TimelineItemPollContent -> {
                 if (targetEvent.eventId == null) return
-                navigator.onEditPollClick(targetEvent.eventId)
+                navigator.navigateToEditPoll(targetEvent.eventId)
             }
             else -> {
                 val composerMode = MessageComposerMode.Edit(
@@ -450,7 +479,7 @@ class MessagesPresenter(
                     }.orEmpty(),
                 )
                 composerState.eventSink(
-                    MessageComposerEvents.SetMode(composerMode)
+                    MessageComposerEvent.SetMode(composerMode)
                 )
             }
         }
@@ -465,7 +494,7 @@ class MessagesPresenter(
             content = "",
         )
         composerState.eventSink(
-            MessageComposerEvents.SetMode(composerMode)
+            MessageComposerEvent.SetMode(composerMode)
         )
     }
 
@@ -478,7 +507,7 @@ class MessagesPresenter(
             content = (targetEvent.content as? TimelineItemEventContentWithAttachment)?.caption.orEmpty(),
         )
         composerState.eventSink(
-            MessageComposerEvents.SetMode(composerMode)
+            MessageComposerEvent.SetMode(composerMode)
         )
     }
 
@@ -495,23 +524,23 @@ class MessagesPresenter(
                 hideImage = timelineProtectionState.hideMediaContent(targetEvent.eventId),
             )
             composerState.eventSink(
-                MessageComposerEvents.SetMode(composerMode)
+                MessageComposerEvent.SetMode(composerMode)
             )
         }
     }
 
     private fun handleShowDebugInfoAction(event: TimelineItem.Event) {
-        navigator.onShowEventDebugInfoClick(event.eventId, event.debugInfo)
+        navigator.navigateToEventDebugInfo(event.eventId, event.debugInfo)
     }
 
     private fun handleForwardAction(event: TimelineItem.Event) {
         if (event.eventId == null) return
-        navigator.onForwardEventClick(event.eventId)
+        navigator.forwardEvent(event.eventId)
     }
 
     private fun handleReportAction(event: TimelineItem.Event) {
         if (event.eventId == null) return
-        navigator.onReportContentClick(event.eventId, event.senderId)
+        navigator.navigateToReportMessage(event.eventId, event.senderId)
     }
 
     private fun handleEndPollAction(

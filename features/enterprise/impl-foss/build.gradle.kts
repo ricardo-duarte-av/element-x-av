@@ -1,13 +1,15 @@
 import extension.setupDependencyInjection
+import extension.testCommonDependencies
 
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2024 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 plugins {
-    id("io.element.android-library")
+    id("io.element.android-compose-library")
 }
 
 android {
@@ -17,13 +19,11 @@ android {
 setupDependencyInjection()
 
 dependencies {
-    implementation(libs.compound)
+    implementation(projects.libraries.compound)
     api(projects.features.enterprise.api)
     implementation(projects.libraries.architecture)
     implementation(projects.libraries.matrix.api)
 
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.test.junit)
-    testImplementation(libs.test.truth)
+    testCommonDependencies(libs)
     testImplementation(projects.libraries.matrix.test)
 }

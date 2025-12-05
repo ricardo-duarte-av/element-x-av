@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -23,10 +24,16 @@ open class OnBoardingStateProvider : PreviewParameterProvider<OnBoardingState> {
             anOnBoardingState(canLoginWithQrCode = true, canCreateAccount = true, canReportBug = true),
             anOnBoardingState(defaultAccountProvider = "element.io", canCreateAccount = false, canReportBug = true),
             anOnBoardingState(customLogoResId = R.drawable.sample_background),
+            anOnBoardingState(
+                isAddingAccount = true,
+                canLoginWithQrCode = true,
+                canCreateAccount = true,
+            ),
         )
 }
 
 fun anOnBoardingState(
+    isAddingAccount: Boolean = false,
     productionApplicationName: String = "Element",
     defaultAccountProvider: String? = null,
     mustChooseAccountProvider: Boolean = false,
@@ -39,6 +46,7 @@ fun anOnBoardingState(
     loginMode: AsyncData<LoginMode> = AsyncData.Uninitialized,
     eventSink: (OnBoardingEvents) -> Unit = {},
 ) = OnBoardingState(
+    isAddingAccount = isAddingAccount,
     productionApplicationName = productionApplicationName,
     defaultAccountProvider = defaultAccountProvider,
     mustChooseAccountProvider = mustChooseAccountProvider,

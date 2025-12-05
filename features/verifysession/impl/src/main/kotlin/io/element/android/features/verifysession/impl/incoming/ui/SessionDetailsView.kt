@@ -1,7 +1,8 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -34,7 +35,7 @@ import io.element.android.libraries.ui.strings.CommonStrings
 
 @Composable
 fun SessionDetailsView(
-    deviceName: String,
+    deviceName: String?,
     deviceId: DeviceId,
     signInFormattedTimestamp: String,
     modifier: Modifier = Modifier,
@@ -61,7 +62,7 @@ fun SessionDetailsView(
                 resourceId = CompoundDrawables.ic_compound_devices
             )
             Text(
-                text = deviceName,
+                text = deviceName ?: deviceId.value,
                 style = ElementTheme.typography.fontBodyMdMedium,
                 color = ElementTheme.colors.textPrimary,
             )
@@ -87,9 +88,16 @@ fun SessionDetailsView(
 @PreviewsDayNight
 @Composable
 internal fun SessionDetailsViewPreview() = ElementPreview {
-    SessionDetailsView(
-        deviceName = "Element X Android",
-        deviceId = DeviceId("ILAKNDNASDLK"),
-        signInFormattedTimestamp = "12:34",
-    )
+    Column {
+        SessionDetailsView(
+            deviceName = "Element X Android",
+            deviceId = DeviceId("ILAKNDNASDLK"),
+            signInFormattedTimestamp = "12:34",
+        )
+        SessionDetailsView(
+            deviceName = null,
+            deviceId = DeviceId("ILAKNDNASDLK"),
+            signInFormattedTimestamp = "12:34",
+        )
+    }
 }

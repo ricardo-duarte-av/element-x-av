@@ -1,7 +1,8 @@
 /*
- * Copyright 2022-2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2022-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -35,6 +36,7 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.IntoMap
+import dev.zacsweers.metro.Origin
 import io.element.android.annotations.ContributesNode
 import org.jetbrains.kotlin.name.FqName
 
@@ -71,14 +73,16 @@ class ContributesNodeProcessor(
         val scope = annotation.arguments.find { it.name?.asString() == "scope" }!!.value as KSType
         val modulePackage = ksClass.packageName.asString()
         val moduleClassName = "${ksClass.simpleName.asString()}_Module"
+        val nodeClassName = ClassName.bestGuess(ksClass.qualifiedName!!.asString())
         val content = FileSpec.builder(
             packageName = modulePackage,
             fileName = moduleClassName,
         )
             .addType(
                 TypeSpec.interfaceBuilder(moduleClassName)
+                    .addAnnotation(AnnotationSpec.builder(Origin::class).addMember(CLASS_PLACEHOLDER, nodeClassName).build())
                     .addAnnotation(BindingContainer::class)
-                    .addAnnotation(AnnotationSpec.builder(ContributesTo::class).addMember("%T::class", scope.toTypeName()).build())
+                    .addAnnotation(AnnotationSpec.builder(ContributesTo::class).addMember(CLASS_PLACEHOLDER, scope.toTypeName()).build())
                     .addFunction(
                         FunSpec.builder("bind${ksClass.simpleName.asString()}Factory")
                             .addModifiers(KModifier.ABSTRACT)
@@ -88,7 +92,7 @@ class ContributesNodeProcessor(
                             .addAnnotation(IntoMap::class)
                             .addAnnotation(
                                 AnnotationSpec.Companion.builder(ClassName.bestGuess(nodeKeyFqName.asString())).addMember(
-                                    "%T::class",
+                                    CLASS_PLACEHOLDER,
                                     ClassName.bestGuess(ksClass.qualifiedName!!.asString())
                                 ).build()
                             )
@@ -115,7 +119,7 @@ class ContributesNodeProcessor(
         val assistedParameters = constructor.parameters.filter { it.isAnnotationPresent(Assisted::class) }
         if (assistedParameters.size != 2) {
             error(
-                "${ksClass.qualifiedName?.asString()} must have an @Inject constructor with 2 @Assisted parameters. Found: ${assistedParameters.size}",
+                "${ksClass.qualifiedName?.asString()} must have a constructor with 2 @Assisted parameters. Found: ${assistedParameters.size}",
             )
         }
         val contextAssistedParam = assistedParameters[0]
@@ -138,6 +142,7 @@ class ContributesNodeProcessor(
             .addType(
                 TypeSpec.interfaceBuilder(assistedFactoryClassName)
                     .addSuperinterface(ClassName.bestGuess(assistedNodeFactoryFqName.asString()).parameterizedBy(nodeClassName))
+                    .addAnnotation(AnnotationSpec.builder(Origin::class).addMember("%T::class", nodeClassName).build())
                     .addAnnotation(AssistedFactory::class)
                     .addFunction(
                         FunSpec.builder("create")
@@ -161,6 +166,7 @@ class ContributesNodeProcessor(
     }
 
     companion object {
+        private const val CLASS_PLACEHOLDER = "%T::class"
         private val assistedNodeFactoryFqName = FqName("io.element.android.libraries.architecture.AssistedNodeFactory")
         private val nodeKeyFqName = FqName("io.element.android.libraries.architecture.NodeKey")
     }

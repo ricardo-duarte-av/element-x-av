@@ -1,7 +1,8 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -23,7 +24,7 @@ import com.bumble.appyx.navmodel.backstack.operation.push
 import com.bumble.appyx.navmodel.backstack.operation.replace
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
 import io.element.android.features.login.impl.di.QrCodeLoginBindings
 import io.element.android.features.login.impl.di.QrCodeLoginGraph
@@ -49,7 +50,7 @@ import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
 @ContributesNode(AppScope::class)
-@Inject
+@AssistedInject
 class QrCodeLoginFlowNode(
     @Assisted buildContext: BuildContext,
     @Assisted plugins: List<Plugin>,
@@ -147,11 +148,11 @@ class QrCodeLoginFlowNode(
         return when (navTarget) {
             is NavTarget.Initial -> {
                 val callback = object : QrCodeIntroNode.Callback {
-                    override fun onCancelClicked() {
+                    override fun cancel() {
                         navigateUp()
                     }
 
-                    override fun onContinue() {
+                    override fun navigateToQrCodeScan() {
                         backstack.push(NavTarget.QrCodeScan)
                     }
                 }
@@ -159,11 +160,11 @@ class QrCodeLoginFlowNode(
             }
             is NavTarget.QrCodeScan -> {
                 val callback = object : QrCodeScanNode.Callback {
-                    override fun onScannedCode(qrCodeLoginData: MatrixQrCodeLoginData) {
+                    override fun handleScannedCode(qrCodeLoginData: MatrixQrCodeLoginData) {
                         lifecycleScope.startAuthentication(qrCodeLoginData)
                     }
 
-                    override fun onCancelClicked() {
+                    override fun cancel() {
                         backstack.pop()
                     }
                 }

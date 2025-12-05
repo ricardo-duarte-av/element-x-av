@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -16,7 +17,7 @@ import com.bumble.appyx.core.plugin.Plugin
 import com.bumble.appyx.navmodel.backstack.BackStack
 import com.bumble.appyx.navmodel.backstack.operation.push
 import dev.zacsweers.metro.Assisted
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
 import io.element.android.features.poll.api.create.CreatePollEntryPoint
 import io.element.android.features.poll.api.create.CreatePollMode
@@ -29,7 +30,7 @@ import io.element.android.libraries.matrix.api.timeline.Timeline
 import kotlinx.parcelize.Parcelize
 
 @ContributesNode(RoomScope::class)
-@Inject
+@AssistedInject
 class PollHistoryFlowNode(
     @Assisted buildContext: BuildContext,
     @Assisted plugins: List<Plugin>,
@@ -53,18 +54,18 @@ class PollHistoryFlowNode(
     override fun resolve(navTarget: NavTarget, buildContext: BuildContext): Node {
         return when (navTarget) {
             is NavTarget.EditPoll -> {
-                createPollEntryPoint.nodeBuilder(this, buildContext)
-                    .params(
-                        CreatePollEntryPoint.Params(
+                createPollEntryPoint.createNode(
+                    parentNode = this,
+                    buildContext = buildContext,
+                    params = CreatePollEntryPoint.Params(
                         timelineMode = Timeline.Mode.Live,
                         mode = CreatePollMode.EditPoll(eventId = navTarget.pollStartEventId)
-                        )
                     )
-                    .build()
+                )
             }
             NavTarget.Root -> {
                 val callback = object : PollHistoryNode.Callback {
-                    override fun onEditPoll(pollStartEventId: EventId) {
+                    override fun navigateToEditPoll(pollStartEventId: EventId) {
                         backstack.push(NavTarget.EditPoll(pollStartEventId))
                     }
                 }

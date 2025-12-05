@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -30,7 +31,7 @@ import io.element.android.tests.testutils.WarmUpRule
 import io.element.android.tests.testutils.test
 import io.element.android.tests.testutils.testCoroutineDispatchers
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -290,7 +291,7 @@ class RoomMemberModerationPresenterTest {
                 )
             )
             skipItems(2)
-            initialState.eventSink(InternalRoomMemberModerationEvents.DoUnbanUser)
+            initialState.eventSink(InternalRoomMemberModerationEvents.DoUnbanUser("Reason"))
             skipItems(1)
             val loadingState = awaitState()
             assertThat(loadingState.unbanUserAsyncAction).isInstanceOf(AsyncAction.Loading::class.java)
@@ -360,7 +361,7 @@ class RoomMemberModerationPresenterTest {
                 updateMembersResult = { Result.success(Unit) }
             ),
         ).apply {
-            val roomMembers = listOfNotNull(targetRoomMember).toPersistentList()
+            val roomMembers = listOfNotNull(targetRoomMember).toImmutableList()
             givenRoomMembersState(state = RoomMembersState.Ready(roomMembers))
         }
     }

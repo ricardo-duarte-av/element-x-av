@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -16,8 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import io.element.android.features.messages.impl.UserEventPermissions
 import io.element.android.features.messages.impl.actionlist.model.TimelineItemAction
 import io.element.android.features.messages.impl.actionlist.model.TimelineItemActionComparator
@@ -25,6 +26,7 @@ import io.element.android.features.messages.impl.actionlist.model.TimelineItemAc
 import io.element.android.features.messages.impl.crypto.sendfailure.VerifiedUserSendFailure
 import io.element.android.features.messages.impl.crypto.sendfailure.VerifiedUserSendFailureFactory
 import io.element.android.features.messages.impl.timeline.model.TimelineItem
+import io.element.android.features.messages.impl.timeline.model.TimelineItemThreadInfo
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContentWithAttachment
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemLegacyCallInviteContent
@@ -45,6 +47,7 @@ import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.room.BaseRoom
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
+import io.element.android.libraries.recentemojis.api.GetRecentEmojis
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -61,7 +64,7 @@ interface ActionListPresenter : Presenter<ActionListState> {
     }
 }
 
-@Inject
+@AssistedInject
 class DefaultActionListPresenter(
     @Assisted
     private val postProcessor: TimelineItemActionPostProcessor,
@@ -72,6 +75,7 @@ class DefaultActionListPresenter(
     private val userSendFailureFactory: VerifiedUserSendFailureFactory,
     private val dateFormatter: DateFormatter,
     private val featureFlagService: FeatureFlagService,
+    private val getRecentEmojis: GetRecentEmojis,
 ) : ActionListPresenter {
     @AssistedFactory
     @ContributesBinding(RoomScope::class)
@@ -83,6 +87,8 @@ class DefaultActionListPresenter(
     }
 
     private val comparator = TimelineItemActionComparator()
+
+    private val suggestedEmojis = persistentListOf("👍️", "👎️", "🔥", "❤️", "👏")
 
     @Composable
     override fun present(): ActionListState {
@@ -101,7 +107,7 @@ class DefaultActionListPresenter(
 
         val isThreadsEnabled = featureFlagService.isFeatureEnabledFlow(FeatureFlags.Threads).collectAsState(false)
 
-        fun handleEvents(event: ActionListEvents) {
+        fun handleEvent(event: ActionListEvents) {
             when (event) {
                 ActionListEvents.Clear -> target.value = ActionListState.Target.None
                 is ActionListEvents.ComputeForMessage -> localCoroutineScope.computeForMessage(
@@ -117,7 +123,7 @@ class DefaultActionListPresenter(
 
         return ActionListState(
             target = target.value,
-            eventSink = { handleEvents(it) }
+            eventSink = ::handleEvent,
         )
     }
 
@@ -143,6 +149,7 @@ class DefaultActionListPresenter(
         val displayEmojiReactions = usersEventPermissions.canSendReaction && timelineItem.content.canReact()
 
         if (actions.isNotEmpty() || displayEmojiReactions || verifiedUserSendFailure != VerifiedUserSendFailure.None) {
+            val recentEmojis = getRecentEmojis().getOrNull()?.toImmutableList() ?: persistentListOf()
             target.value = ActionListState.Target.Success(
                 event = timelineItem,
                 sentTimeFull = dateFormatter.format(
@@ -152,14 +159,18 @@ class DefaultActionListPresenter(
                 ),
                 displayEmojiReactions = displayEmojiReactions,
                 verifiedUserSendFailure = verifiedUserSendFailure,
-                actions = actions.toImmutableList()
+                actions = actions.toImmutableList(),
+                // Merge suggested and recent emojis, removing duplicates and returning at most 100
+                recentEmojis = (suggestedEmojis + recentEmojis).distinct()
+                    .take(100)
+                    .toImmutableList()
             )
         } else {
             target.value = ActionListState.Target.None
         }
     }
 
-    private suspend fun buildActions(
+    private fun buildActions(
         timelineItem: TimelineItem.Event,
         usersEventPermissions: UserEventPermissions,
         isDeveloperModeEnabled: Boolean,
@@ -174,7 +185,7 @@ class DefaultActionListPresenter(
                     add(TimelineItemAction.ReplyInThread)
                     add(TimelineItemAction.Reply)
                 } else {
-                    if (!isThreadsEnabled && timelineItem.threadInfo.threadRootId != null) {
+                    if (!isThreadsEnabled && timelineItem.threadInfo is TimelineItemThreadInfo.ThreadResponse) {
                         // If threads are not enabled, we can reply in a thread if the item is already in the thread
                         add(TimelineItemAction.ReplyInThread)
                     } else {

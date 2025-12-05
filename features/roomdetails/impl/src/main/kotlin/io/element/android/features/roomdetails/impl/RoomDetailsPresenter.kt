@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -21,7 +22,7 @@ import io.element.android.features.leaveroom.api.LeaveRoomEvent
 import io.element.android.features.leaveroom.api.LeaveRoomState
 import io.element.android.features.roomcall.api.RoomCallState
 import io.element.android.features.roomdetails.impl.members.details.RoomMemberDetailsPresenter
-import io.element.android.features.roomdetails.impl.securityandprivacy.permissions.securityAndPrivacyPermissionsAsState
+import io.element.android.features.securityandprivacy.api.securityAndPrivacyPermissionsAsState
 import io.element.android.libraries.androidutils.clipboard.ClipboardHelper
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
@@ -51,7 +52,7 @@ import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.services.analytics.api.AnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -136,19 +137,19 @@ class RoomDetailsPresenter(
         val snackbarDispatcher = LocalSnackbarDispatcher.current
         val snackbarMessage by snackbarDispatcher.collectSnackbarMessageAsState()
 
-        fun handleEvents(event: RoomDetailsEvent) {
+        fun handleEvent(event: RoomDetailsEvent) {
             when (event) {
                 is RoomDetailsEvent.LeaveRoom -> {
                     leaveRoomState.eventSink(LeaveRoomEvent.LeaveRoom(room.roomId, needsConfirmation = event.needsConfirmation))
                 }
                 RoomDetailsEvent.MuteNotification -> {
                     scope.launch(dispatchers.io) {
-                        client.notificationSettingsService().muteRoom(room.roomId)
+                        notificationSettingsService.muteRoom(room.roomId)
                     }
                 }
                 RoomDetailsEvent.UnmuteNotification -> {
                     scope.launch(dispatchers.io) {
-                        client.notificationSettingsService().unmuteRoom(room.roomId, isEncrypted, room.isOneToOne)
+                        notificationSettingsService.unmuteRoom(room.roomId, isEncrypted, room.isOneToOne)
                     }
                 }
                 is RoomDetailsEvent.SetFavorite -> scope.setFavorite(event.isFavorite)
@@ -164,7 +165,7 @@ class RoomDetailsPresenter(
         val securityAndPrivacyPermissions = room.securityAndPrivacyPermissionsAsState(syncUpdateFlow.value)
         val canShowSecurityAndPrivacy by remember {
             derivedStateOf {
-                isKnockRequestsEnabled && roomType is RoomDetailsType.Room && securityAndPrivacyPermissions.value.hasAny
+                roomType is RoomDetailsType.Room && securityAndPrivacyPermissions.value.hasAny
             }
         }
 
@@ -194,7 +195,7 @@ class RoomDetailsPresenter(
             isFavorite = isFavorite,
             displayRolesAndPermissionsSettings = !isDm && isUserAdmin,
             isPublic = joinRule == JoinRule.Public,
-            heroes = roomInfo.heroes.toPersistentList(),
+            heroes = roomInfo.heroes.toImmutableList(),
             pinnedMessagesCount = pinnedMessagesCount,
             snackbarMessage = snackbarMessage,
             canShowKnockRequests = canShowKnockRequests,
@@ -204,7 +205,8 @@ class RoomDetailsPresenter(
             canReportRoom = canReportRoom,
             isTombstoned = roomInfo.successorRoom != null,
             showDebugInfo = isDeveloperModeEnabled,
-            eventSink = ::handleEvents,
+            roomVersion = roomInfo.roomVersion,
+            eventSink = ::handleEvent,
         )
     }
 

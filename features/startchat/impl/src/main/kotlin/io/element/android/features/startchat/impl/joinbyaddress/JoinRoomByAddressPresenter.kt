@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -17,7 +18,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.features.startchat.StartChatNavigator
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.core.data.tryOrNull
@@ -31,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private const val ADDRESS_RESOLVE_TIMEOUT_IN_SECONDS = 10
 
-@Inject
+@AssistedInject
 class JoinRoomByAddressPresenter(
     @Assisted private val navigator: StartChatNavigator,
     private val client: MatrixClient,
@@ -48,7 +49,7 @@ class JoinRoomByAddressPresenter(
         var internalAddressState by remember { mutableStateOf<RoomAddressState>(RoomAddressState.Unknown) }
         var validateAddress: Boolean by remember { mutableStateOf(false) }
 
-        fun handleEvents(event: JoinRoomByAddressEvents) {
+        fun handleEvent(event: JoinRoomByAddressEvents) {
             when (event) {
                 JoinRoomByAddressEvents.Continue -> {
                     when (val currentState = internalAddressState) {
@@ -88,13 +89,13 @@ class JoinRoomByAddressPresenter(
         return JoinRoomByAddressState(
             address = address,
             addressState = addressState,
-            eventSink = ::handleEvents
+            eventSink = ::handleEvent,
         )
     }
 
     private fun onRoomFound(state: RoomAddressState.RoomFound) {
         navigator.onDismissJoinRoomByAddress()
-        navigator.onOpenRoom(
+        navigator.onRoomCreated(
             roomIdOrAlias = state.resolved.roomId.toRoomIdOrAlias(),
             serverNames = state.resolved.servers
         )

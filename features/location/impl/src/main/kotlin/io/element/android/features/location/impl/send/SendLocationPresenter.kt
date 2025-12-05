@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -17,7 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.Composer
 import io.element.android.features.location.impl.common.MapDefaults
 import io.element.android.features.location.impl.common.actions.LocationActions
@@ -36,7 +37,7 @@ import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.coroutines.launch
 
-@Inject
+@AssistedInject
 class SendLocationPresenter(
     permissionsPresenterFactory: PermissionsPresenter.Factory,
     private val room: JoinedRoom,
@@ -47,7 +48,7 @@ class SendLocationPresenter(
     private val buildMeta: BuildMeta,
 ) : Presenter<SendLocationState> {
     @AssistedFactory
-    interface Factory {
+    fun interface Factory {
         fun create(timelineMode: Timeline.Mode): SendLocationPresenter
     }
 
@@ -78,7 +79,7 @@ class SendLocationPresenter(
             }
         }
 
-        fun handleEvents(event: SendLocationEvents) {
+        fun handleEvent(event: SendLocationEvents) {
             when (event) {
                 is SendLocationEvents.SendLocation -> scope.launch {
                     sendLocation(event, mode)
@@ -103,7 +104,7 @@ class SendLocationPresenter(
             mode = mode,
             hasLocationPermission = permissionsState.isAnyGranted,
             appName = appName,
-            eventSink = ::handleEvents,
+            eventSink = ::handleEvent,
         )
     }
 

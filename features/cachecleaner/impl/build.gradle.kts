@@ -1,9 +1,11 @@
 import extension.setupDependencyInjection
+import extension.testCommonDependencies
 
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2023, 2024 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -22,8 +24,5 @@ dependencies {
     implementation(projects.libraries.core)
     implementation(projects.libraries.architecture)
 
-    testImplementation(libs.test.junit)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.test.truth)
-    testImplementation(projects.tests.testutils)
+    testCommonDependencies(libs)
 }

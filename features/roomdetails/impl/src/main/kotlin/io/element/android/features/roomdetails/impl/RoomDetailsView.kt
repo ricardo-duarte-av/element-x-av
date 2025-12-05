@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -89,7 +90,6 @@ import io.element.android.services.analytics.compose.LocalAnalyticsService
 import io.element.android.services.analyticsproviders.api.trackers.captureInteraction
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toPersistentList
 
 @Composable
 fun RoomDetailsView(
@@ -264,6 +264,7 @@ fun RoomDetailsView(
             if (state.showDebugInfo) {
                 DebugInfoSection(
                     roomId = state.roomId,
+                    roomVersion = state.roomVersion,
                 )
             }
         }
@@ -396,11 +397,11 @@ private fun RoomHeaderSection(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Avatar(
-            avatarData = AvatarData(roomId.value, roomName, avatarUrl, AvatarSize.RoomHeader),
+            avatarData = AvatarData(roomId.value, roomName, avatarUrl, AvatarSize.RoomDetailsHeader),
             avatarType = AvatarType.Room(
                 heroes = heroes.map { user ->
-                    user.getAvatarData(size = AvatarSize.RoomHeader)
-                }.toPersistentList(),
+                    user.getAvatarData(size = AvatarSize.RoomDetailsHeader)
+                }.toImmutableList(),
                 isTombstoned = isTombstoned,
             ),
             contentDescription = avatarUrl?.let { stringResource(CommonStrings.a11y_room_avatar) },
@@ -714,7 +715,10 @@ private fun OtherActionsSection(
 }
 
 @Composable
-private fun DebugInfoSection(roomId: RoomId) {
+private fun DebugInfoSection(
+    roomId: RoomId,
+    roomVersion: String?,
+) {
     val context = LocalContext.current
     PreferenceCategory(showTopDivider = true) {
         ListItem(
@@ -736,6 +740,19 @@ private fun DebugInfoSection(roomId: RoomId) {
                     context.getString(CommonStrings.common_copied_to_clipboard)
                 )
             },
+        )
+        ListItem(
+            headlineContent = {
+                Text("Room version")
+            },
+            supportingContent = {
+                Text(
+                    text = roomVersion ?: "Unknown",
+                    style = ElementTheme.typography.fontBodySmRegular,
+                    color = ElementTheme.colors.textSecondary,
+                )
+            },
+            leadingContent = ListItemContent.Icon(IconSource.Vector(CompoundIcons.Info())),
         )
     }
 }

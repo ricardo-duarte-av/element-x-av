@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -10,9 +11,7 @@ package io.element.android.features.preferences.impl.tasks
 import android.content.Context
 import coil3.SingletonImageLoader
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.Provider
-import io.element.android.features.ftue.api.state.FtueService
 import io.element.android.features.invite.api.SeenInvitesStore
 import io.element.android.features.preferences.impl.DefaultCacheService
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
@@ -29,14 +28,12 @@ interface ClearCacheUseCase {
 }
 
 @ContributesBinding(SessionScope::class)
-@Inject
 class DefaultClearCacheUseCase(
     @ApplicationContext private val context: Context,
     private val matrixClient: MatrixClient,
     private val coroutineDispatchers: CoroutineDispatchers,
     private val defaultCacheService: DefaultCacheService,
     private val okHttpClient: Provider<OkHttpClient>,
-    private val ftueService: FtueService,
     private val pushService: PushService,
     private val seenInvitesStore: SeenInvitesStore,
     private val activeRoomsHolder: ActiveRoomsHolder,
@@ -56,7 +53,6 @@ class DefaultClearCacheUseCase(
         // Clear app cache
         context.cacheDir.deleteRecursively()
         // Clear some settings
-        ftueService.reset()
         seenInvitesStore.clear()
         // Ensure any error will be displayed again
         pushService.setIgnoreRegistrationError(matrixClient.sessionId, false)

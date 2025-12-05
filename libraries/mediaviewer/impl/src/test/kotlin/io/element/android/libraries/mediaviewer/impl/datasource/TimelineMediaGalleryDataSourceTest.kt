@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -255,19 +256,19 @@ class TimelineMediaGalleryDataSourceTest {
             )
         }
     }
+}
 
-    private fun TestScope.createTimelineMediaGalleryDataSource(
-        room: JoinedRoom = FakeJoinedRoom(
-            liveTimeline = FakeTimeline(),
-        ),
-    ): TimelineMediaGalleryDataSource {
-        return TimelineMediaGalleryDataSource(
-            room = room,
-            mediaTimeline = LiveMediaTimeline(room),
-            timelineMediaItemsFactory = createTimelineMediaItemsFactory(),
-            mediaItemsPostProcessor = MediaItemsPostProcessor(),
-        )
-    }
+internal fun TestScope.createTimelineMediaGalleryDataSource(
+    room: JoinedRoom = FakeJoinedRoom(
+        liveTimeline = FakeTimeline(),
+    ),
+): TimelineMediaGalleryDataSource {
+    return TimelineMediaGalleryDataSource(
+        room = room,
+        mediaTimeline = LiveMediaTimeline(room),
+        timelineMediaItemsFactory = createTimelineMediaItemsFactory(),
+        mediaItemsPostProcessor = MediaItemsPostProcessor(),
+    )
 }
 
 fun TestScope.createTimelineMediaItemsFactory() = TimelineMediaItemsFactory(

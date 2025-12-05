@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -21,6 +22,7 @@ import io.element.android.libraries.designsystem.utils.snackbar.SnackbarMessage
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.ui.strings.CommonStrings
+import kotlinx.collections.immutable.toImmutableList
 
 open class HomeStateProvider : PreviewParameterProvider<HomeState> {
     override val values: Sequence<HomeState>
@@ -50,6 +52,7 @@ open class HomeStateProvider : PreviewParameterProvider<HomeState> {
 
 internal fun aHomeState(
     matrixUser: MatrixUser = MatrixUser(userId = UserId("@id:domain"), displayName = "User#1"),
+    currentUserAndNeighbors: List<MatrixUser> = listOf(matrixUser),
     showAvatarIndicator: Boolean = false,
     hasNetworkConnection: Boolean = true,
     snackbarMessage: SnackbarMessage? = null,
@@ -61,7 +64,7 @@ internal fun aHomeState(
     directLogoutState: DirectLogoutState = aDirectLogoutState(),
     eventSink: (HomeEvents) -> Unit = {}
 ) = HomeState(
-    matrixUser = matrixUser,
+    currentUserAndNeighbors = currentUserAndNeighbors.toImmutableList(),
     showAvatarIndicator = showAvatarIndicator,
     hasNetworkConnection = hasNetworkConnection,
     snackbarMessage = snackbarMessage,

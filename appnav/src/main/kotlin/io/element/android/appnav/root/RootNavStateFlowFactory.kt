@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -12,9 +13,9 @@ import com.bumble.appyx.core.state.SavedStateMap
 import dev.zacsweers.metro.Inject
 import io.element.android.appnav.di.MatrixSessionCache
 import io.element.android.features.preferences.api.CacheService
-import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
 import io.element.android.libraries.matrix.ui.media.ImageLoaderHolder
 import io.element.android.libraries.preferences.api.store.SessionPreferencesStoreFactory
+import io.element.android.libraries.sessionstorage.api.SessionStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -28,7 +29,7 @@ private const val SAVE_INSTANCE_KEY = "io.element.android.x.RootNavStateFlowFact
  */
 @Inject
 class RootNavStateFlowFactory(
-    private val authenticationService: MatrixAuthenticationService,
+    private val sessionStore: SessionStore,
     private val cacheService: CacheService,
     private val matrixSessionCache: MatrixSessionCache,
     private val imageLoaderHolder: ImageLoaderHolder,
@@ -39,7 +40,7 @@ class RootNavStateFlowFactory(
     fun create(savedStateMap: SavedStateMap?): Flow<RootNavState> {
         return combine(
             cacheIndexFlow(savedStateMap),
-            authenticationService.loggedInStateFlow(),
+            sessionStore.loggedInStateFlow(),
         ) { cacheIndex, loggedInState ->
             RootNavState(
                 cacheIndex = cacheIndex,

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -19,7 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import im.vector.app.features.analytics.plan.MobileScreen
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.call.api.CallType
@@ -49,7 +50,7 @@ import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
-@Inject
+@AssistedInject
 class CallScreenPresenter(
     @Assisted private val callType: CallType,
     @Assisted private val navigator: CallScreenNavigator,
@@ -64,6 +65,7 @@ class CallScreenPresenter(
     private val appForegroundStateService: AppForegroundStateService,
     @AppCoroutineScope
     private val appCoroutineScope: CoroutineScope,
+    private val widgetMessageSerializer: WidgetMessageSerializer,
 ) : Presenter<CallScreenState> {
     @AssistedFactory
     interface Factory {
@@ -79,7 +81,7 @@ class CallScreenPresenter(
         val urlState = remember { mutableStateOf<AsyncData<String>>(AsyncData.Uninitialized) }
         val callWidgetDriver = remember { mutableStateOf<MatrixWidgetDriver?>(null) }
         val messageInterceptor = remember { mutableStateOf<WidgetMessageInterceptor?>(null) }
-        var isJoinedCall by rememberSaveable { mutableStateOf(false) }
+        var isWidgetLoaded by rememberSaveable { mutableStateOf(false) }
         var ignoreWebViewError by rememberSaveable { mutableStateOf(false) }
         var webViewError by remember { mutableStateOf<String?>(null) }
         val languageTag = languageTagProvider.provideLanguageTag()
@@ -139,8 +141,8 @@ class CallScreenPresenter(
                         if (parsedMessage?.direction == WidgetMessage.Direction.FromWidget) {
                             if (parsedMessage.action == WidgetMessage.Action.Close) {
                                 close(callWidgetDriver.value, navigator)
-                            } else if (parsedMessage.action == WidgetMessage.Action.Join) {
-                                isJoinedCall = true
+                            } else if (parsedMessage.action == WidgetMessage.Action.ContentLoaded) {
+                                isWidgetLoaded = true
                             }
                         }
                     }
@@ -151,8 +153,8 @@ class CallScreenPresenter(
                 // Wait for the call to be joined, if it takes too long, we display an error
                 delay(10.seconds)
 
-                if (!isJoinedCall) {
-                    Timber.w("The call took too long to be joined. Displaying an error before exiting.")
+                if (!isWidgetLoaded) {
+                    Timber.w("The call took too long to load. Displaying an error before exiting.")
 
                     // This will display a simple 'Sorry, an error occurred' dialog and force the user to exit the call
                     webViewError = ""
@@ -160,15 +162,15 @@ class CallScreenPresenter(
             }
         }
 
-        fun handleEvents(event: CallScreenEvents) {
+        fun handleEvent(event: CallScreenEvents) {
             when (event) {
                 is CallScreenEvents.Hangup -> {
                     val widgetId = callWidgetDriver.value?.id
                     val interceptor = messageInterceptor.value
-                    if (widgetId != null && interceptor != null && isJoinedCall) {
+                    if (widgetId != null && interceptor != null && isWidgetLoaded) {
                         // If the call was joined, we need to hang up first. Then the UI will be dismissed automatically.
                         sendHangupMessage(widgetId, interceptor)
-                        isJoinedCall = false
+                        isWidgetLoaded = false
 
                         coroutineScope.launch {
                             // Wait for a couple of seconds to receive the hangup message
@@ -198,9 +200,9 @@ class CallScreenPresenter(
             urlState = urlState.value,
             webViewError = webViewError,
             userAgent = userAgent,
-            isCallActive = isJoinedCall,
+            isCallActive = isWidgetLoaded,
             isInWidgetMode = isInWidgetMode,
-            eventSink = { handleEvents(it) },
+            eventSink = ::handleEvent,
         )
     }
 
@@ -242,7 +244,7 @@ class CallScreenPresenter(
             }
             coroutineScope.launch {
                 Timber.d("Observing sync state in-call for sessionId: ${roomCallType.sessionId}")
-                client.syncService().syncState
+                client.syncService.syncState
                     .collect { state ->
                         if (state != SyncState.Running) {
                             appForegroundStateService.updateIsInCallState(true)
@@ -258,7 +260,7 @@ class CallScreenPresenter(
     }
 
     private fun parseMessage(message: String): WidgetMessage? {
-        return WidgetMessageSerializer.deserialize(message).getOrNull()
+        return widgetMessageSerializer.deserialize(message).getOrNull()
     }
 
     private fun sendHangupMessage(widgetId: String, messageInterceptor: WidgetMessageInterceptor) {
@@ -269,7 +271,7 @@ class CallScreenPresenter(
             action = WidgetMessage.Action.HangUp,
             data = null,
         )
-        messageInterceptor.sendMessage(WidgetMessageSerializer.serialize(message))
+        messageInterceptor.sendMessage(widgetMessageSerializer.serialize(message))
     }
 
     private fun CoroutineScope.close(widgetDriver: MatrixWidgetDriver?, navigator: CallScreenNavigator) = launch(dispatchers.io) {

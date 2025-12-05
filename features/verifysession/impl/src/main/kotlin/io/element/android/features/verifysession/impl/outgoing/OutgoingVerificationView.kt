@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -157,7 +158,10 @@ private fun OutgoingVerificationHeader(step: Step, request: VerificationRequest.
         }
         Step.Canceled -> CommonStrings.common_verification_failed
         Step.Ready -> R.string.screen_session_verification_compare_emojis_title
-        Step.Completed -> CommonStrings.common_verification_complete
+        Step.Completed -> when (request) {
+            is VerificationRequest.Outgoing.CurrentSession -> R.string.screen_session_verification_device_verified
+            is VerificationRequest.Outgoing.User -> CommonStrings.common_verification_complete
+        }
         is Step.Verifying -> when (step.data) {
             is SessionVerificationData.Decimals -> R.string.screen_session_verification_compare_numbers_title
             is SessionVerificationData.Emojis -> R.string.screen_session_verification_compare_emojis_title

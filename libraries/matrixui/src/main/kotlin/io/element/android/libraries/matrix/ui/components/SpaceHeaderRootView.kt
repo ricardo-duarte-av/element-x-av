@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -31,7 +32,6 @@ import io.element.android.libraries.ui.strings.CommonStrings
 @Composable
 fun SpaceHeaderRootView(
     numberOfSpaces: Int,
-    numberOfRooms: Int,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -52,7 +52,7 @@ fun SpaceHeaderRootView(
         )
         SpaceInfoRow(
             leftText = numberOfSpaces(numberOfSpaces),
-            rightText = numberOfRooms(numberOfRooms),
+            rightText = null,
         )
         Text(
             text = stringResource(CommonStrings.screen_space_list_description),
@@ -68,6 +68,5 @@ fun SpaceHeaderRootView(
 internal fun SpaceHeaderRootViewPreview() = ElementPreview {
     SpaceHeaderRootView(
         numberOfSpaces = 3,
-        numberOfRooms = 10,
     )
 }

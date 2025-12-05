@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,7 +10,7 @@ package io.element.android.features.poll.impl.data
 
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.libraries.core.extensions.flatMap
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.matrix.api.core.EventId
@@ -26,14 +27,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
-@Inject
+@AssistedInject
 class PollRepository(
     private val room: JoinedRoom,
     private val defaultTimelineProvider: TimelineProvider,
     @Assisted private val timelineMode: Timeline.Mode,
 ) {
     @AssistedFactory
-    interface Factory {
+    fun interface Factory {
         fun create(
             timelineMode: Timeline.Mode,
         ): PollRepository

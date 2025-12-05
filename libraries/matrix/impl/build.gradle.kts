@@ -1,9 +1,11 @@
 import extension.setupDependencyInjection
+import extension.testCommonDependencies
 
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2022-2024 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -36,14 +38,12 @@ dependencies {
     implementation(projects.services.toolbox.api)
     api(projects.libraries.matrix.api)
     implementation(projects.libraries.core)
-    implementation("net.java.dev.jna:jna:5.17.0@aar")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.serialization.json)
     implementation(libs.kotlinx.collections.immutable)
 
-    testImplementation(libs.test.junit)
-    testImplementation(libs.test.truth)
-    testImplementation(libs.test.robolectric)
+    testCommonDependencies(libs)
     testImplementation(projects.libraries.featureflag.test)
     testImplementation(projects.libraries.matrix.test)
     testImplementation(projects.libraries.preferences.test)
@@ -51,7 +51,4 @@ dependencies {
     testImplementation(projects.libraries.sessionStorage.test)
     testImplementation(projects.services.analytics.test)
     testImplementation(projects.services.toolbox.test)
-    testImplementation(projects.tests.testutils)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.test.turbine)
 }

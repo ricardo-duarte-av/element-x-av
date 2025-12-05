@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -36,7 +37,6 @@ import io.element.android.features.messages.impl.timeline.protection.TimelinePro
 import io.element.android.features.messages.impl.timeline.protection.aTimelineProtectionState
 import io.element.android.features.roomcall.api.RoomCallState
 import io.element.android.features.roomcall.api.aStandByCallState
-import io.element.android.features.roomcall.api.anOngoingCallState
 import io.element.android.features.roommembermoderation.api.RoomMemberModerationEvents
 import io.element.android.features.roommembermoderation.api.RoomMemberModerationState
 import io.element.android.libraries.architecture.AsyncData
@@ -49,6 +49,7 @@ import io.element.android.libraries.matrix.api.room.tombstone.SuccessorRoom
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.textcomposer.model.aTextEditorStateRich
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 
@@ -56,17 +57,12 @@ open class MessagesStateProvider : PreviewParameterProvider<MessagesState> {
     override val values: Sequence<MessagesState>
         get() = sequenceOf(
             aMessagesState(),
-            aMessagesState(hasNetworkConnection = false),
             aMessagesState(composerState = aMessageComposerState(showAttachmentSourcePicker = true)),
             aMessagesState(userEventPermissions = aUserEventPermissions(canSendMessage = false)),
             aMessagesState(showReinvitePrompt = true),
-            aMessagesState(roomName = null),
             aMessagesState(composerState = aMessageComposerState(showTextFormatting = true)),
             aMessagesState(
                 voiceMessageComposerState = aVoiceMessageComposerState(showPermissionRationaleDialog = true),
-            ),
-            aMessagesState(
-                roomCallState = anOngoingCallState(),
             ),
             aMessagesState(
                 voiceMessageComposerState = aVoiceMessageComposerState(
@@ -75,21 +71,18 @@ open class MessagesStateProvider : PreviewParameterProvider<MessagesState> {
                 ),
             ),
             aMessagesState(
-                roomCallState = aStandByCallState(canStartCall = false),
-            ),
-            aMessagesState(
                 pinnedMessagesBannerState = aLoadedPinnedMessagesBannerState(
                     knownPinnedMessagesCount = 4,
                     currentPinnedMessageIndex = 0,
                 ),
             ),
-            aMessagesState(roomName = "A DM with a very looong name", dmUserVerificationState = IdentityState.Verified),
-            aMessagesState(roomName = "A DM with a very looong name", dmUserVerificationState = IdentityState.VerificationViolation),
             aMessagesState(successorRoom = SuccessorRoom(RoomId("!id:domain"), null)),
-            aMessagesState(timelineState = aTimelineState(
-                timelineMode = Timeline.Mode.Thread(threadRootId = ThreadId("\$a-thread-id")),
-                timelineItems = aTimelineItemList(aTimelineItemTextContent()),
-            )),
+            aMessagesState(
+                timelineState = aTimelineState(
+                    timelineMode = Timeline.Mode.Thread(threadRootId = ThreadId("\$a-thread-id")),
+                    timelineItems = aTimelineItemList(aTimelineItemTextContent()),
+                )
+            ),
         )
 }
 
@@ -115,7 +108,6 @@ fun aMessagesState(
     actionListState: ActionListState = anActionListState(),
     customReactionState: CustomReactionState = aCustomReactionState(),
     reactionSummaryState: ReactionSummaryState = aReactionSummaryState(),
-    hasNetworkConnection: Boolean = true,
     showReinvitePrompt: Boolean = false,
     roomCallState: RoomCallState = aStandByCallState(),
     pinnedMessagesBannerState: PinnedMessagesBannerState = aLoadedPinnedMessagesBannerState(),
@@ -139,7 +131,6 @@ fun aMessagesState(
     actionListState = actionListState,
     customReactionState = customReactionState,
     reactionSummaryState = reactionSummaryState,
-    hasNetworkConnection = hasNetworkConnection,
     snackbarMessage = null,
     inviteProgress = AsyncData.Uninitialized,
     showReinvitePrompt = showReinvitePrompt,
@@ -186,9 +177,11 @@ fun aReactionSummaryState(
 
 fun aCustomReactionState(
     target: CustomReactionState.Target = CustomReactionState.Target.None,
+    recentEmojis: ImmutableList<String> = persistentListOf(),
     eventSink: (CustomReactionEvents) -> Unit = {},
 ) = CustomReactionState(
     target = target,
+    recentEmojis = recentEmojis,
     selectedEmoji = persistentSetOf(),
     eventSink = eventSink,
 )

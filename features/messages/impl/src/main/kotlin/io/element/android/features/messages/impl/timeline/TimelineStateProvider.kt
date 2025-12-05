@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -16,6 +17,7 @@ import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.TimelineItemGroupPosition
 import io.element.android.features.messages.impl.timeline.model.TimelineItemReactions
 import io.element.android.features.messages.impl.timeline.model.TimelineItemReadReceipts
+import io.element.android.features.messages.impl.timeline.model.TimelineItemThreadInfo
 import io.element.android.features.messages.impl.timeline.model.anAggregatedReaction
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContent
 import io.element.android.features.messages.impl.timeline.model.event.aTimelineItemStateEventContent
@@ -32,7 +34,6 @@ import io.element.android.libraries.matrix.api.core.UniqueId
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.room.tombstone.PredecessorRoom
 import io.element.android.libraries.matrix.api.timeline.Timeline
-import io.element.android.libraries.matrix.api.timeline.item.EventThreadInfo
 import io.element.android.libraries.matrix.api.timeline.item.TimelineItemDebugInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.LocalEventSendState
 import io.element.android.libraries.matrix.api.timeline.item.event.MessageShield
@@ -41,7 +42,6 @@ import io.element.android.libraries.matrix.ui.messages.reply.aProfileTimelineDet
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toPersistentList
 import java.util.UUID
 import kotlin.random.Random
 
@@ -146,7 +146,7 @@ internal fun aTimelineItemEvent(
     groupPosition: TimelineItemGroupPosition = TimelineItemGroupPosition.None,
     sendState: LocalEventSendState? = null,
     inReplyTo: InReplyToDetails? = null,
-    threadInfo: EventThreadInfo = EventThreadInfo(threadRootId = null, threadSummary = null),
+    threadInfo: TimelineItemThreadInfo? = null,
     debugInfo: TimelineItemDebugInfo = aTimelineItemDebugInfo(),
     timelineItemReactions: TimelineItemReactions = aTimelineItemReactions(),
     readReceiptState: TimelineItemReadReceipts = aTimelineItemReadReceipts(),
@@ -197,7 +197,7 @@ fun aTimelineItemReactions(
                     )
                 )
             }
-        }.toPersistentList()
+        }.toImmutableList()
     )
 }
 
@@ -260,7 +260,7 @@ internal fun aTimelineRoomInfo(
     userHasPermissionToSendMessage = userHasPermissionToSendMessage,
     userHasPermissionToSendReaction = true,
     roomCallState = aStandByCallState(),
-    pinnedEventIds = pinnedEventIds,
+    pinnedEventIds = pinnedEventIds.toImmutableList(),
     typingNotificationState = typingNotificationState,
     predecessorRoom = predecessorRoom,
 )

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -38,7 +39,7 @@ private const val MSG_TYPE_GALLERY_UNSTABLE = "dm.filament.gallery"
 class EventMessageMapper {
     private val inReplyToMapper by lazy { InReplyToMapper(TimelineEventContentMapper()) }
 
-    fun map(message: MsgLikeKind.Message, inReplyTo: InReplyToDetails?, threadInfo: EventThreadInfo): MessageContent = message.use {
+    fun map(message: MsgLikeKind.Message, inReplyTo: InReplyToDetails?, threadInfo: EventThreadInfo?): MessageContent = message.use {
         val type = it.content.msgType.use(this::mapMessageType)
         val inReplyToEvent: InReplyTo? = inReplyTo?.use(inReplyToMapper::map)
         MessageContent(

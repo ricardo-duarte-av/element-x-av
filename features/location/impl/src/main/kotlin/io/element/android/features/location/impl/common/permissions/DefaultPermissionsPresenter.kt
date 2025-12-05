@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -14,11 +15,11 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 
 @Suppress("unused")
-@Inject
+@AssistedInject
 class DefaultPermissionsPresenter(
     @Assisted private val permissions: List<String>
 ) : PermissionsPresenter {
@@ -33,7 +34,7 @@ class DefaultPermissionsPresenter(
     override fun present(): PermissionsState {
         val multiplePermissionsState = rememberMultiplePermissionsState(permissions = permissions)
 
-        fun handleEvents(event: PermissionsEvents) {
+        fun handleEvent(event: PermissionsEvents) {
             when (event) {
                 PermissionsEvents.RequestPermissions -> multiplePermissionsState.launchMultiplePermissionRequest()
             }
@@ -46,7 +47,7 @@ class DefaultPermissionsPresenter(
                 else -> PermissionsState.Permissions.NoneGranted
             },
             shouldShowRationale = multiplePermissionsState.shouldShowRationale,
-            eventSink = ::handleEvents,
+            eventSink = ::handleEvent,
         )
     }
 }

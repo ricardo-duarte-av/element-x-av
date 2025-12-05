@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -13,7 +14,7 @@ import dev.zacsweers.metro.Inject
 import io.element.android.libraries.core.log.logger.LoggerTag
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.SessionId
-import io.element.android.libraries.pushproviders.api.CurrentUserPushConfig
+import io.element.android.libraries.pushproviders.api.Config
 import io.element.android.libraries.pushproviders.api.Distributor
 import io.element.android.libraries.pushproviders.api.PushProvider
 import io.element.android.libraries.pushproviders.api.PusherSubscriber
@@ -32,6 +33,7 @@ class FirebasePushProvider(
 ) : PushProvider {
     override val index = FirebaseConfig.INDEX
     override val name = FirebaseConfig.NAME
+    override val supportMultipleDistributors = false
 
     override fun getDistributors(): List<Distributor> {
         return listOfNotNull(
@@ -54,6 +56,8 @@ class FirebasePushProvider(
         )
     }
 
+    override suspend fun getCurrentDistributorValue(sessionId: SessionId): String = firebaseDistributor.value
+
     override suspend fun getCurrentDistributor(sessionId: SessionId) = firebaseDistributor
 
     override suspend fun unregister(matrixClient: MatrixClient): Result<Unit> {
@@ -71,9 +75,9 @@ class FirebasePushProvider(
      */
     override suspend fun onSessionDeleted(sessionId: SessionId) = Unit
 
-    override suspend fun getCurrentUserPushConfig(): CurrentUserPushConfig? {
+    override suspend fun getPushConfig(sessionId: SessionId): Config? {
         return firebaseStore.getFcmToken()?.let { fcmToken ->
-            CurrentUserPushConfig(
+            Config(
                 url = firebaseGatewayProvider.getFirebaseGateway(),
                 pushKey = fcmToken
             )

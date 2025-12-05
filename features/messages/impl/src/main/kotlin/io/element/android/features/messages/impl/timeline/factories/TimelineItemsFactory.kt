@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,7 +10,7 @@ package io.element.android.features.messages.impl.timeline.factories
 
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.AssistedInject
 import io.element.android.features.messages.impl.timeline.diff.TimelineItemsCacheInvalidator
 import io.element.android.features.messages.impl.timeline.factories.event.TimelineItemEventFactory
 import io.element.android.features.messages.impl.timeline.factories.virtual.TimelineItemVirtualFactory
@@ -21,7 +22,7 @@ import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.matrix.api.room.RoomMember
 import io.element.android.libraries.matrix.api.timeline.MatrixTimelineItem
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -29,7 +30,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-@Inject
+@AssistedInject
 class TimelineItemsFactory(
     @Assisted config: TimelineItemsFactoryConfig,
     eventItemFactoryCreator: TimelineItemEventFactory.Creator,
@@ -94,7 +95,7 @@ class TimelineItemsFactory(
                 newTimelineItemStates.add(updatedItem)
             }
         }
-        val result = timelineItemGrouper.group(newTimelineItemStates).toPersistentList()
+        val result = timelineItemGrouper.group(newTimelineItemStates).toImmutableList()
         this._timelineItems.emit(result)
     }
 

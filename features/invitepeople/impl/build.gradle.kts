@@ -1,9 +1,11 @@
 import extension.setupDependencyInjection
+import extension.testCommonDependencies
 
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2022-2024 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -37,17 +39,8 @@ dependencies {
     implementation(projects.services.apperror.api)
     api(projects.features.invitepeople.api)
 
-    testImplementation(libs.test.junit)
-    testImplementation(libs.test.mockk)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.molecule.runtime)
-    testImplementation(libs.test.truth)
-    testImplementation(libs.test.turbine)
-    testImplementation(libs.test.robolectric)
+    testCommonDependencies(libs, true)
     testImplementation(projects.libraries.matrix.test)
     testImplementation(projects.libraries.usersearch.test)
     testImplementation(projects.services.apperror.test)
-    testImplementation(projects.tests.testutils)
-    testImplementation(libs.androidx.compose.ui.test.junit)
-    testReleaseImplementation(libs.androidx.compose.ui.test.manifest)
 }

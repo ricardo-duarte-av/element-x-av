@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,15 +10,17 @@ package io.element.android.libraries.push.impl.push
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import io.element.android.features.call.api.CallType
 import io.element.android.features.call.api.ElementCallEntryPoint
 import io.element.android.libraries.core.log.logger.LoggerTag
 import io.element.android.libraries.core.meta.BuildMeta
 import io.element.android.libraries.di.annotations.AppCoroutineScope
-import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
+import io.element.android.libraries.featureflag.api.FeatureFlagService
+import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.exception.NotificationResolverException
+import io.element.android.libraries.push.api.push.NotificationEventRequest
+import io.element.android.libraries.push.api.push.SyncOnNotifiableEvent
 import io.element.android.libraries.push.impl.history.PushHistoryService
 import io.element.android.libraries.push.impl.history.onDiagnosticPush
 import io.element.android.libraries.push.impl.history.onInvalidPushReceived
@@ -25,7 +28,6 @@ import io.element.android.libraries.push.impl.history.onSuccess
 import io.element.android.libraries.push.impl.history.onUnableToResolveEvent
 import io.element.android.libraries.push.impl.history.onUnableToRetrieveSession
 import io.element.android.libraries.push.impl.notifications.FallbackNotificationFactory
-import io.element.android.libraries.push.impl.notifications.NotificationEventRequest
 import io.element.android.libraries.push.impl.notifications.NotificationResolverQueue
 import io.element.android.libraries.push.impl.notifications.channels.NotificationChannels
 import io.element.android.libraries.push.impl.notifications.model.FallbackNotifiableEvent
@@ -49,7 +51,6 @@ private val loggerTag = LoggerTag("PushHandler", LoggerTag.PushLoggerTag)
 
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
-@Inject
 class DefaultPushHandler(
     private val onNotifiableEventReceived: OnNotifiableEventReceived,
     private val onRedactedEventReceived: OnRedactedEventReceived,
@@ -58,7 +59,6 @@ class DefaultPushHandler(
     private val userPushStoreFactory: UserPushStoreFactory,
     private val pushClientSecret: PushClientSecret,
     private val buildMeta: BuildMeta,
-    private val matrixAuthenticationService: MatrixAuthenticationService,
     private val diagnosticPushHandler: DiagnosticPushHandler,
     private val elementCallEntryPoint: ElementCallEntryPoint,
     private val notificationChannels: NotificationChannels,
@@ -67,6 +67,8 @@ class DefaultPushHandler(
     @AppCoroutineScope
     private val appCoroutineScope: CoroutineScope,
     private val fallbackNotificationFactory: FallbackNotificationFactory,
+    private val syncOnNotifiableEvent: SyncOnNotifiableEvent,
+    private val featureFlagService: FeatureFlagService,
 ) : PushHandler {
     init {
         processPushEventResults()
@@ -182,9 +184,9 @@ class DefaultPushHandler(
                     }
                 }
 
-                // Process redactions of messages
+                // Process redactions of messages in background to not block operations with higher priority
                 if (redactions.isNotEmpty()) {
-                    onRedactedEventReceived.onRedactedEventsReceived(redactions)
+                    appCoroutineScope.launch { onRedactedEventReceived.onRedactedEventsReceived(redactions) }
                 }
 
                 // Find and process ringing call notifications separately
@@ -197,6 +199,10 @@ class DefaultPushHandler(
                 // Finally, process other notifications (messages, invites, generic notifications, etc.)
                 if (nonRingingCallEvents.isNotEmpty()) {
                     onNotifiableEventReceived.onNotifiableEventsReceived(nonRingingCallEvents)
+                }
+
+                if (!featureFlagService.isFeatureEnabled(FeatureFlags.SyncNotificationsWithWorkManager)) {
+                    syncOnNotifiableEvent(requests)
                 }
             }
             .launchIn(appCoroutineScope)
@@ -241,32 +247,15 @@ class DefaultPushHandler(
             } else {
                 Timber.tag(loggerTag.value).d("## handleInternal()")
             }
-            val clientSecret = pushData.clientSecret
-            // clientSecret should not be null. If this happens, restore default session
-            var reason = if (clientSecret == null) "No client secret" else ""
-            val userId = clientSecret?.let {
-                // Get userId from client secret
-                pushClientSecret.getUserIdFromSecret(clientSecret).also {
-                    if (it == null) {
-                        reason = "Unable to get userId from client secret"
-                    }
-                }
-            }
-                ?: run {
-                    matrixAuthenticationService.getLatestSessionId().also {
-                        if (it == null) {
-                            if (reason.isNotEmpty()) reason += " - "
-                            reason += "Unable to get latest sessionId"
-                        }
-                    }
-                }
+            // Get userId from client secret
+            val userId = pushClientSecret.getUserIdFromSecret(pushData.clientSecret)
             if (userId == null) {
-                Timber.w("Unable to get a session")
+                Timber.w("Unable to get userId from client secret")
                 pushHistoryService.onUnableToRetrieveSession(
                     providerInfo = providerInfo,
                     eventId = pushData.eventId,
                     roomId = pushData.roomId,
-                    reason = reason,
+                    reason = "Unable to get userId from client secret",
                 )
                 return
             }

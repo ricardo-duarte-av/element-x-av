@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -17,10 +18,12 @@ import kotlinx.coroutines.flow.map
 
 class InMemorySessionStore(
     initialList: List<SessionData> = emptyList(),
+    private val updateUserProfileResult: (String, String?, String?) -> Unit = { _, _, _ -> error("Not implemented") },
+    private val setLatestSessionResult: (String) -> Unit = { error("Not implemented") },
 ) : SessionStore {
     private val sessionDataListFlow = MutableStateFlow(initialList)
 
-    override fun isLoggedIn(): Flow<LoggedInState> {
+    override fun loggedInStateFlow(): Flow<LoggedInState> {
         return sessionDataListFlow.map {
             if (it.isEmpty()) {
                 LoggedInState.NotLoggedIn
@@ -37,7 +40,7 @@ class InMemorySessionStore(
 
     override fun sessionsFlow(): Flow<List<SessionData>> = sessionDataListFlow.asStateFlow()
 
-    override suspend fun storeData(sessionData: SessionData) {
+    override suspend fun addSession(sessionData: SessionData) {
         val currentList = sessionDataListFlow.value.toMutableList()
         currentList.removeAll { it.userId == sessionData.userId }
         currentList.add(sessionData)
@@ -53,6 +56,10 @@ class InMemorySessionStore(
         }
     }
 
+    override suspend fun updateUserProfile(sessionId: String, displayName: String?, avatarUrl: String?) {
+        updateUserProfileResult(sessionId, displayName, avatarUrl)
+    }
+
     override suspend fun getSession(sessionId: String): SessionData? {
         return sessionDataListFlow.value.firstOrNull { it.userId == sessionId }
     }
@@ -61,13 +68,19 @@ class InMemorySessionStore(
         return sessionDataListFlow.value
     }
 
+    override suspend fun numberOfSessions(): Int {
+        return sessionDataListFlow.value.size
+    }
+
     override suspend fun getLatestSession(): SessionData? {
         return sessionDataListFlow.value.firstOrNull()
     }
 
+    override suspend fun setLatestSession(sessionId: String) {
+        setLatestSessionResult(sessionId)
+    }
+
     override suspend fun removeSession(sessionId: String) {
-        val currentList = sessionDataListFlow.value.toMutableList()
-        currentList.removeAll { it.userId == sessionId }
-        sessionDataListFlow.value = currentList
+        sessionDataListFlow.value = sessionDataListFlow.value.filter { it.userId != sessionId }
     }
 }

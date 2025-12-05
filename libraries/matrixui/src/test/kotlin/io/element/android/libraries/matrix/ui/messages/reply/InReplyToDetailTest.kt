@@ -1,14 +1,14 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
 package io.element.android.libraries.matrix.ui.messages.reply
 
 import com.google.common.truth.Truth.assertThat
-import io.element.android.libraries.matrix.api.timeline.item.EventThreadInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.FormattedBody
 import io.element.android.libraries.matrix.api.timeline.item.event.InReplyTo
 import io.element.android.libraries.matrix.api.timeline.item.event.MembershipChange
@@ -18,7 +18,7 @@ import io.element.android.libraries.matrix.api.timeline.item.event.TextMessageTy
 import io.element.android.libraries.matrix.test.AN_EVENT_ID
 import io.element.android.libraries.matrix.test.A_USER_ID
 import io.element.android.libraries.matrix.test.permalink.FakePermalinkParser
-import io.element.android.libraries.matrix.test.timeline.aProfileTimelineDetails
+import io.element.android.libraries.matrix.test.timeline.aProfileDetails
 import io.element.android.libraries.matrix.test.timeline.item.event.aRoomMembershipContent
 import org.junit.Test
 
@@ -47,7 +47,7 @@ class InReplyToDetailTest {
         val inReplyTo = InReplyTo.Ready(
             eventId = AN_EVENT_ID,
             senderId = A_USER_ID,
-            senderProfile = aProfileTimelineDetails(),
+            senderProfile = aProfileDetails(),
             content = aRoomMembershipContent(
                 userId = A_USER_ID,
                 change = MembershipChange.INVITED,
@@ -65,12 +65,12 @@ class InReplyToDetailTest {
         val inReplyTo = InReplyTo.Ready(
             eventId = AN_EVENT_ID,
             senderId = A_USER_ID,
-            senderProfile = aProfileTimelineDetails(),
+            senderProfile = aProfileDetails(),
             content = MessageContent(
                 body = "**Hello!**",
                 inReplyTo = null,
                 isEdited = false,
-                threadInfo = EventThreadInfo(threadRootId = null, threadSummary = null),
+                threadInfo = null,
                 type = TextMessageType(
                     body = "**Hello!**",
                     formatted = FormattedBody(
@@ -90,12 +90,12 @@ class InReplyToDetailTest {
         val inReplyTo = InReplyTo.Ready(
             eventId = AN_EVENT_ID,
             senderId = A_USER_ID,
-            senderProfile = aProfileTimelineDetails(),
+            senderProfile = aProfileDetails(),
             content = MessageContent(
                 body = "**Hello!**",
                 inReplyTo = null,
                 isEdited = false,
-                threadInfo = EventThreadInfo(threadRootId = null, threadSummary = null),
+                threadInfo = null,
                 type = TextMessageType(
                     body = "**Hello!**",
                     formatted = null,

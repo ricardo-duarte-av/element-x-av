@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,10 +10,9 @@ package io.element.android.features.messages.impl.utils.messagesummary
 
 import android.content.Context
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
-import io.element.android.features.messages.impl.timeline.model.TimelineItem
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemAudioContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEncryptedContent
+import io.element.android.features.messages.impl.timeline.model.event.TimelineItemEventContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemFileContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemImageContent
 import io.element.android.features.messages.impl.timeline.model.event.TimelineItemLegacyCallInviteContent
@@ -33,19 +33,18 @@ import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.ui.strings.CommonStrings
 
 @ContributesBinding(RoomScope::class)
-@Inject
 class DefaultMessageSummaryFormatter(
     @ApplicationContext private val context: Context,
 ) : MessageSummaryFormatter {
-    override fun format(event: TimelineItem.Event): String {
-        return when (event.content) {
-            is TimelineItemTextBasedContent -> event.content.plainText
-            is TimelineItemProfileChangeContent -> event.content.body
-            is TimelineItemStateContent -> event.content.body
+    override fun format(content: TimelineItemEventContent): String {
+        return when (content) {
+            is TimelineItemTextBasedContent -> content.plainText
+            is TimelineItemProfileChangeContent -> content.body
+            is TimelineItemStateContent -> content.body
             is TimelineItemLocationContent -> context.getString(CommonStrings.common_shared_location)
             is TimelineItemEncryptedContent -> context.getString(CommonStrings.common_unable_to_decrypt)
             is TimelineItemRedactedContent -> context.getString(CommonStrings.common_message_removed)
-            is TimelineItemPollContent -> event.content.question
+            is TimelineItemPollContent -> content.question
             is TimelineItemVoiceContent -> context.getString(CommonStrings.common_voice_message)
             is TimelineItemUnknownContent -> context.getString(CommonStrings.common_unsupported_event)
             is TimelineItemImageContent -> context.getString(CommonStrings.common_image)

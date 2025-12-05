@@ -1,9 +1,11 @@
 import extension.setupDependencyInjection
+import extension.testCommonDependencies
 
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2022-2024 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -27,6 +29,7 @@ setupDependencyInjection()
 dependencies {
     implementation(projects.appconfig)
     implementation(projects.features.enterprise.api)
+    implementation(projects.features.viewfolder.api)
     implementation(projects.services.toolbox.api)
     implementation(projects.libraries.androidutils)
     implementation(projects.libraries.core)
@@ -45,19 +48,13 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.compose)
 
-    testImplementation(libs.test.junit)
-    testImplementation(libs.test.robolectric)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.molecule.runtime)
-    testImplementation(libs.test.truth)
-    testImplementation(libs.test.turbine)
-    testImplementation(libs.test.mockk)
+    testCommonDependencies(libs)
     testImplementation(projects.features.enterprise.test)
     testImplementation(projects.libraries.matrix.test)
     testImplementation(projects.libraries.sessionStorage.test)
     testImplementation(projects.features.rageshake.test)
+    testImplementation(projects.features.viewfolder.test)
     testImplementation(projects.libraries.preferences.test)
-    testImplementation(projects.tests.testutils)
     testImplementation(projects.services.toolbox.test)
     testImplementation(libs.network.mockwebserver)
 }

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -18,7 +19,6 @@ import io.element.android.features.messages.impl.timeline.model.event.TimelineIt
 import io.element.android.features.messages.impl.timeline.model.virtual.aTimelineItemDaySeparatorModel
 import io.element.android.libraries.designsystem.components.avatar.anAvatarData
 import io.element.android.libraries.matrix.api.core.UniqueId
-import io.element.android.libraries.matrix.api.timeline.item.EventThreadInfo
 import io.element.android.libraries.matrix.api.timeline.item.event.LocalEventSendState
 import io.element.android.libraries.matrix.test.AN_EVENT_ID
 import io.element.android.libraries.matrix.test.A_USER_ID
@@ -42,7 +42,7 @@ class TimelineItemGrouperTest {
         isEditable = false,
         canBeRepliedTo = false,
         inReplyTo = null,
-        threadInfo = EventThreadInfo(threadRootId = null, threadSummary = null),
+        threadInfo = null,
         origin = null,
         timelineItemDebugInfoProvider = { aTimelineItemDebugInfo() },
         messageShieldProvider = { null },

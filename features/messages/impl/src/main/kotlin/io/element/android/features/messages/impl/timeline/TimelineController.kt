@@ -1,19 +1,20 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
 package io.element.android.features.messages.impl.timeline
 
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.binding
 import io.element.android.features.messages.impl.timeline.di.LiveTimeline
 import io.element.android.libraries.di.RoomScope
 import io.element.android.libraries.matrix.api.core.EventId
+import io.element.android.libraries.matrix.api.core.ThreadId
 import io.element.android.libraries.matrix.api.room.CreateTimelineParams
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.timeline.MatrixTimelineItem
@@ -43,7 +44,6 @@ import java.util.Optional
  */
 @SingleIn(RoomScope::class)
 @ContributesBinding(RoomScope::class, binding = binding<TimelineProvider>())
-@Inject
 class TimelineController(
     private val room: JoinedRoom,
     @LiveTimeline private val liveTimeline: Timeline,
@@ -74,21 +74,26 @@ class TimelineController(
         }
     }
 
-    suspend fun focusOnEvent(eventId: EventId): Result<Unit> {
-        return room.createTimeline(CreateTimelineParams.Focused(eventId))
-            .onFailure {
-                if (it is CancellationException) {
-                    throw it
-                }
-            }
-            .map { newDetachedTimeline ->
-                detachedTimelineFlow.getAndUpdate { current ->
-                    if (current.isPresent) {
-                        current.get().close()
+    suspend fun focusOnEvent(eventId: EventId, threadRootId: ThreadId?): Result<EventFocusResult> {
+        return if (threadRootId != null) {
+            Result.success(EventFocusResult.IsInThread(threadRootId))
+        } else {
+            room.createTimeline(CreateTimelineParams.Focused(eventId))
+                .onFailure {
+                    if (it is CancellationException) {
+                        throw it
                     }
-                    Optional.of(newDetachedTimeline)
                 }
-            }
+                .map { newDetachedTimeline ->
+                    detachedTimelineFlow.getAndUpdate { current ->
+                        if (current.isPresent) {
+                            current.get().close()
+                        }
+                        Optional.of(newDetachedTimeline)
+                    }
+                    EventFocusResult.FocusedOnLive
+                }
+        }
     }
 
     /**
@@ -135,4 +140,9 @@ class TimelineController(
     override fun activeTimelineFlow(): StateFlow<Timeline> {
         return currentTimelineFlow
     }
+}
+
+sealed interface EventFocusResult {
+    data object FocusedOnLive : EventFocusResult
+    data class IsInThread(val threadId: ThreadId) : EventFocusResult
 }

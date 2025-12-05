@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,7 +10,8 @@ package io.element.android.libraries.matrix.impl
 
 import dev.zacsweers.metro.Inject
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
-import io.element.android.libraries.di.BaseDirectory
+import io.element.android.libraries.core.data.ByteUnit
+import io.element.android.libraries.core.data.megaBytes
 import io.element.android.libraries.di.CacheDirectory
 import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.featureflag.api.FeatureFlagService
@@ -34,16 +36,19 @@ import org.matrix.rustcomponents.sdk.RequestConfig
 import org.matrix.rustcomponents.sdk.Session
 import org.matrix.rustcomponents.sdk.SlidingSyncVersion
 import org.matrix.rustcomponents.sdk.SlidingSyncVersionBuilder
+import org.matrix.rustcomponents.sdk.SqliteStoreBuilder
 import org.matrix.rustcomponents.sdk.use
 import timber.log.Timber
+import uniffi.matrix_sdk_base.MediaRetentionPolicy
 import uniffi.matrix_sdk_crypto.CollectStrategy
 import uniffi.matrix_sdk_crypto.DecryptionSettings
 import uniffi.matrix_sdk_crypto.TrustRequirement
 import java.io.File
+import kotlin.time.Duration.Companion.days
+import kotlin.time.toJavaDuration
 
 @Inject
 class RustMatrixClientFactory(
-    @BaseDirectory private val baseDirectory: File,
     @CacheDirectory private val cacheDirectory: File,
     @AppCoroutineScope
     private val appCoroutineScope: CoroutineScope,
@@ -70,6 +75,19 @@ class RustMatrixClientFactory(
             .username(sessionData.userId)
             .use { it.build() }
 
+        client.setMediaRetentionPolicy(
+            MediaRetentionPolicy(
+                // Make this 500MB instead of 400MB
+                maxCacheSize = 500.megaBytes.to(ByteUnit.BYTES).toULong(),
+                // This is the default value, but let's make it explicit
+                maxFileSize = 20.megaBytes.to(ByteUnit.BYTES).toULong(),
+                // Use 30 days instead of 60
+                lastAccessExpiry = 30.days.toJavaDuration(),
+                // This is the default value, but let's make it explicit
+                cleanupFrequency = 1.days.toJavaDuration(),
+            )
+        )
+
         client.restoreSession(sessionData.toSession())
 
         create(client)
@@ -87,7 +105,6 @@ class RustMatrixClientFactory(
 
         return RustMatrixClient(
             innerClient = client,
-            baseDirectory = baseDirectory,
             sessionStore = sessionStore,
             appCoroutineScope = appCoroutineScope,
             sessionDelegate = sessionDelegate,
@@ -97,6 +114,7 @@ class RustMatrixClientFactory(
             clock = clock,
             timelineEventTypeFilterFactory = timelineEventTypeFilterFactory,
             featureFlagService = featureFlagService,
+            analyticsService = analyticsService,
         ).also {
             Timber.tag(it.toString()).d("Creating Client with access token '$anonymizedAccessToken' and refresh token '$anonymizedRefreshToken'")
         }
@@ -108,12 +126,13 @@ class RustMatrixClientFactory(
         slidingSyncType: ClientBuilderSlidingSync,
     ): ClientBuilder {
         return clientBuilderProvider.provide()
-            .sessionPaths(
-                dataPath = sessionPaths.fileDirectory.absolutePath,
-                cachePath = sessionPaths.cacheDirectory.absolutePath,
+            .sqliteStore(
+                SqliteStoreBuilder(
+                    dataPath = sessionPaths.fileDirectory.absolutePath,
+                    cachePath = sessionPaths.cacheDirectory.absolutePath,
+                ).passphrase(passphrase)
             )
             .setSessionDelegate(sessionDelegate)
-            .sessionPassphrase(passphrase)
             .userAgent(userAgentProvider.provide())
             .addRootCertificates(userCertificatesProvider.provides())
             .autoEnableBackups(true)
@@ -136,13 +155,15 @@ class RustMatrixClientFactory(
             )
             .enableShareHistoryOnInvite(featureFlagService.isFeatureEnabled(FeatureFlags.EnableKeyShareOnInvite))
             .threadsEnabled(featureFlagService.isFeatureEnabled(FeatureFlags.Threads), threadSubscriptions = false)
-            .requestConfig(RequestConfig(
-                timeout = 30_000uL,
-                retryLimit = 0u,
-                // Use default values for the rest
-                maxConcurrentRequests = null,
-                maxRetryTime = null,
-            ))
+            .requestConfig(
+                RequestConfig(
+                    timeout = 30_000uL,
+                    retryLimit = 0u,
+                    // Use default values for the rest
+                    maxConcurrentRequests = null,
+                    maxRetryTime = null,
+                )
+            )
             .run {
                 // Apply sliding sync version settings
                 when (slidingSyncType) {

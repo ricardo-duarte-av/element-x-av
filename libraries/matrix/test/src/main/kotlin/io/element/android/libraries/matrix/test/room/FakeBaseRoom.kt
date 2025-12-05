@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -71,6 +72,7 @@ class FakeBaseRoom(
     private val forgetResult: () -> Result<Unit> = { lambdaError() },
     private val reportRoomResult: (String?) -> Result<Unit> = { lambdaError() },
     private val predecessorRoomResult: () -> PredecessorRoom? = { null },
+    private val threadRootIdForEventResult: (EventId) -> Result<ThreadId?> = { lambdaError() },
 ) : BaseRoom {
     private val _roomInfoFlow: MutableStateFlow<RoomInfo> = MutableStateFlow(initialRoomInfo)
     override val roomInfoFlow: StateFlow<RoomInfo> = _roomInfoFlow
@@ -244,6 +246,10 @@ class FakeBaseRoom(
     fun givenUpdateMembersResult(result: () -> Unit) {
         updateMembersResult = result
     }
+
+    override suspend fun threadRootIdForEvent(eventId: EventId): Result<ThreadId?> {
+        return threadRootIdForEventResult(eventId)
+    }
 }
 
 fun defaultRoomPowerLevelValues() = RoomPowerLevelsValues(
@@ -254,5 +260,6 @@ fun defaultRoomPowerLevelValues() = RoomPowerLevelsValues(
     redactEvents = 50,
     roomName = 100,
     roomAvatar = 100,
-    roomTopic = 100
+    roomTopic = 100,
+    spaceChild = 100,
 )

@@ -1,32 +1,33 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
 package io.element.android.features.poll.impl.model
 
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import io.element.android.features.poll.api.pollcontent.PollAnswerItem
 import io.element.android.features.poll.api.pollcontent.PollContentState
 import io.element.android.features.poll.api.pollcontent.PollContentStateFactory
 import io.element.android.libraries.di.RoomScope
 import io.element.android.libraries.matrix.api.MatrixClient
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.poll.isDisclosed
-import io.element.android.libraries.matrix.api.timeline.item.event.EventTimelineItem
 import io.element.android.libraries.matrix.api.timeline.item.event.PollContent
 import kotlinx.collections.immutable.toImmutableList
 
 @ContributesBinding(RoomScope::class)
-@Inject
 class DefaultPollContentStateFactory(
     private val matrixClient: MatrixClient,
 ) : PollContentStateFactory {
     override suspend fun create(
-        event: EventTimelineItem,
-        content: PollContent
+        eventId: EventId?,
+        isEditable: Boolean,
+        isOwn: Boolean,
+        content: PollContent,
     ): PollContentState {
         val totalVoteCount = content.votes.flatMap { it.value }.size
         val myVotes = content.votes.filter { matrixClient.sessionId in it.value }.keys
@@ -59,13 +60,13 @@ class DefaultPollContentStateFactory(
         }
 
         return PollContentState(
-            eventId = event.eventId,
+            eventId = eventId,
             question = content.question,
             answerItems = answerItems.toImmutableList(),
             pollKind = content.kind,
-            isPollEditable = event.isEditable,
+            isPollEditable = isEditable,
             isPollEnded = isPollEnded,
-            isMine = event.isOwn,
+            isMine = isOwn,
         )
     }
 }

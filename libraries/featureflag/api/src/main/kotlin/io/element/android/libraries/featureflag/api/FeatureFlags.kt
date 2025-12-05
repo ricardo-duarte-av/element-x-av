@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -19,6 +20,7 @@ enum class FeatureFlags(
     override val description: String? = null,
     override val defaultValue: (BuildMeta) -> Boolean,
     override val isFinished: Boolean,
+    override val isInLabs: Boolean = false,
 ) : Feature {
     RoomDirectorySearch(
         key = "feature.roomdirectorysearch",
@@ -71,7 +73,13 @@ enum class FeatureFlags(
     Space(
         key = "feature.space",
         title = "Spaces",
-        description = "Spaces are under active development, only developers should enable this flag for now.",
+        defaultValue = { true },
+        isFinished = true,
+    ),
+    SpaceSettings(
+        key = "feature.spaceSettings",
+        title = "Space settings",
+        description = "Allow managing space settings such as details, permissions and privacy.",
         defaultValue = { false },
         isFinished = false,
     ),
@@ -99,5 +107,22 @@ enum class FeatureFlags(
         description = "Renders thread messages as a dedicated timeline. Restarting the app is required for this setting to fully take effect.",
         defaultValue = { false },
         isFinished = false,
-    )
+        isInLabs = true,
+    ),
+    MultiAccount(
+        key = "feature.multi_account",
+        title = "Multi accounts",
+        description = "Allow the application to connect to multiple accounts at the same time." +
+            "\n\nWARNING: this feature is EXPERIMENTAL and UNSTABLE.",
+        defaultValue = { false },
+        isFinished = false,
+    ),
+    SyncNotificationsWithWorkManager(
+        key = "feature.sync_notifications_with_workmanager",
+        title = "Sync notifications with WorkManager",
+        description = "Use WorkManager to schedule notification sync tasks when a push is received." +
+            " This should improve reliability and battery usage.",
+        defaultValue = { true },
+        isFinished = false,
+    ),
 }

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+# Copyright (c) 2025 Element Creations Ltd.
 # Copyright 2023-2024 New Vector Ltd.
 #
-# SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+# SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
 # Please see LICENSE files in the repository root for full details.
 
 # do not exit when any command fails (issue with git flow)
@@ -146,7 +147,7 @@ printf "Creating fastlane file...\n"
 printf -v versionReleaseNumber2Digits "%02d" "${versionReleaseNumber}"
 fastlaneFile="20${versionYear}${versionMonth}${versionReleaseNumber2Digits}0.txt"
 fastlanePathFile="./fastlane/metadata/android/en-US/changelogs/${fastlaneFile}"
-printf "Main changes in this version: TODO.\nFull changelog: https://github.com/element-hq/element-x-android/releases" > "${fastlanePathFile}"
+printf "Main changes in this version: bug fixes and improvements.\nFull changelog: https://github.com/element-hq/element-x-android/releases" > "${fastlanePathFile}"
 
 read -r -p "I have created the file ${fastlanePathFile}, please edit it and press enter to continue. "
 git add "${fastlanePathFile}"

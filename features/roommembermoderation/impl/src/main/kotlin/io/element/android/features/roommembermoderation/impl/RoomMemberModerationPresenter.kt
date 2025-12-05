@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -35,9 +36,9 @@ import io.element.android.libraries.matrix.ui.room.canBanAsState
 import io.element.android.libraries.matrix.ui.room.canKickAsState
 import io.element.android.libraries.matrix.ui.room.userPowerLevelAsState
 import io.element.android.services.analytics.api.AnalyticsService
-import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
@@ -68,7 +69,7 @@ class RoomMemberModerationPresenter(
         var selectedUser by remember {
             mutableStateOf<MatrixUser?>(null)
         }
-        val moderationActions = remember { mutableStateOf(persistentListOf<ModerationActionState>()) }
+        val moderationActions = remember { mutableStateOf<ImmutableList<ModerationActionState>>(persistentListOf()) }
 
         fun handleEvent(event: RoomMemberModerationEvents) {
             when (event) {
@@ -118,7 +119,7 @@ class RoomMemberModerationPresenter(
                 }
                 is InternalRoomMemberModerationEvents.DoUnbanUser -> {
                     selectedUser?.let {
-                        coroutineScope.unbanUser(it.userId, unbanUserAsyncAction)
+                        coroutineScope.unbanUser(it.userId, event.reason, unbanUserAsyncAction)
                     }
                     selectedUser = null
                 }
@@ -140,7 +141,7 @@ class RoomMemberModerationPresenter(
             kickUserAsyncAction = kickUserAsyncAction.value,
             banUserAsyncAction = banUserAsyncAction.value,
             unbanUserAsyncAction = unbanUserAsyncAction.value,
-            eventSink = { handleEvent(it) },
+            eventSink = ::handleEvent,
         )
     }
 
@@ -149,7 +150,7 @@ class RoomMemberModerationPresenter(
         canKick: Boolean,
         canBan: Boolean,
         currentUserMemberPowerLevel: Long,
-    ): PersistentList<ModerationActionState> {
+    ): ImmutableList<ModerationActionState> {
         return buildList {
             add(ModerationActionState(action = ModerationAction.DisplayProfile, isEnabled = true))
             // Assume the member is a regular user when it's unknown
@@ -168,7 +169,7 @@ class RoomMemberModerationPresenter(
                     add(ModerationActionState(action = ModerationAction.BanUser, isEnabled = canModerateThisUser))
                 }
             }
-        }.toPersistentList()
+        }.toImmutableList()
     }
 
     private fun CoroutineScope.kickUser(
@@ -197,10 +198,14 @@ class RoomMemberModerationPresenter(
 
     private fun CoroutineScope.unbanUser(
         userId: UserId,
+        reason: String,
         unbanUserAction: MutableState<AsyncAction<Unit>>,
     ) = runActionAndWaitForMembershipChange(unbanUserAction) {
         analyticsService.capture(RoomModeration(RoomModeration.Action.UnbanMember))
-        room.unbanUser(userId = userId)
+        room.unbanUser(
+            userId = userId,
+            reason = reason.takeIf { it.isNotBlank() },
+        )
     }
 
     private fun <T> CoroutineScope.runActionAndWaitForMembershipChange(
