@@ -1,7 +1,8 @@
 /*
- * Copyright 2022-2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2022-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -128,12 +129,12 @@ android {
             )
             signingConfig = signingConfigs.getByName("debug")
 
-            postprocessing {
-                isRemoveUnusedCode = true
-                isObfuscate = false
-                isOptimizeCode = true
-                isRemoveUnusedResources = true
-                proguardFiles("proguard-rules.pro")
+            optimization {
+                enable = true
+                keepRules {
+                    files.add(File(projectDir, "proguard-rules.pro"))
+                    files.add(getDefaultProguardFile("proguard-android-optimize.txt"))
+                }
             }
         }
 
@@ -150,10 +151,6 @@ android {
             )
             matchingFallbacks += listOf("release")
             signingConfig = signingConfigs.getByName("nightly")
-
-            postprocessing {
-                initWith(release.postprocessing)
-            }
 
             firebaseAppDistribution {
                 artifactType = "APK"
@@ -340,7 +337,7 @@ fun Project.configureLicensesTasks(reportingExtension: ReportingExtension) {
                     it.toString()
                 }
             }
-            val artifactsFile = reportingExtension.file("licensee/android$capitalizedVariantName/artifacts.json")
+            val artifactsFile = reportingExtension.baseDirectory.file("licensee/android$capitalizedVariantName/artifacts.json")
 
             val copyArtifactsTask =
                 project.tasks.register<AssetCopyTask>("copy${capitalizedVariantName}LicenseeReportToAssets") {

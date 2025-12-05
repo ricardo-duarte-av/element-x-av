@@ -97,6 +97,7 @@
   <string name="action_forgot_password">"Zapomněli jste heslo?"</string>
   <string name="action_forward">"Přeposlat"</string>
   <string name="action_go_back">"Přejít zpět"</string>
+  <string name="action_go_to_roles_and_permissions">"Přejít na role a oprávnění"</string>
   <string name="action_go_to_settings">"Přejít do nastavení"</string>
   <string name="action_ignore">"Ignorovat"</string>
   <string name="action_invite">"Pozvat"</string>
@@ -178,7 +179,6 @@
   <string name="common_advanced_settings">"Pokročilá nastavení"</string>
   <string name="common_an_image">"obrázek"</string>
   <string name="common_analytics">"Analytika"</string>
-  <string name="common_android_notification_sync_notifications_foreground_service_title">"Načítání oznámení…"</string>
   <string name="common_android_shortcuts_remove_reason_left_room">"Opustili jste místnost"</string>
   <string name="common_android_shortcuts_remove_reason_session_logged_out">"Byli jste odhlášeni z relace"</string>
   <string name="common_appearance">"Vzhled"</string>
@@ -427,7 +427,6 @@ Opravdu chcete pokračovat?"</string>
   <string name="invite_friends_rich_title">"🔐️ Připojte se ke mně na %1$s"</string>
   <string name="invite_friends_text">"Ahoj, ozvi se mi na %1$s: %2$s"</string>
   <string name="login_initial_device_name_android">"%1$s Android"</string>
-  <string name="notification_thread_in_room">"Vlákno v %1$s"</string>
   <string name="preference_rageshake">"Zatřeste zařízením pro nahlášení chyby"</string>
   <string name="screen_bug_report_a11y_screenshot">"Snímek obrazovky"</string>
   <string name="screen_create_poll_option_accessibility_label">"%1$s: %2$s"</string>
@@ -453,6 +452,10 @@ Opravdu chcete pokračovat?"</string>
   <string name="screen_resolve_send_failure_unsigned_device_title">"Vaše zpráva nebyla odeslána, protože%1$s neověřil(a) všechna zařízení"</string>
   <string name="screen_resolve_send_failure_you_unsigned_device_subtitle">"Jedno nebo více vašich zařízení není ověřeno. Zprávu můžete přesto odeslat, nebo ji můžete prozatím zrušit a zkusit to znovu později, až ověříte všechna svá zařízení."</string>
   <string name="screen_resolve_send_failure_you_unsigned_device_title">"Vaše zpráva nebyla odeslána, protože jste neověřili jedno nebo více zařízení"</string>
+  <string name="screen_room_change_permissions_change_settings">"Změnit nastavení"</string>
+  <string name="screen_room_change_permissions_manage_space">"Správa prostoru"</string>
+  <string name="screen_room_change_permissions_manage_space_rooms">"Spravovat místnosti"</string>
+  <string name="screen_room_change_permissions_title">"Oprávnění"</string>
   <string name="screen_room_change_role_administrators_or_owners_title">"Upravit správce nebo vlastníky"</string>
   <string name="screen_room_error_failed_processing_media">"Nahrání média se nezdařilo, zkuste to prosím znovu."</string>
   <string name="screen_room_error_failed_retrieving_user_details">"Nepodařilo se načíst údaje o uživateli"</string>

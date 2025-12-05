@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -27,7 +28,7 @@ import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransa
 import io.element.android.libraries.matrix.api.timeline.item.event.LocalEventSendState
 import io.element.android.libraries.matrix.api.timeline.item.event.MessageShield
 import io.element.android.libraries.matrix.api.timeline.item.event.MessageShieldProvider
-import io.element.android.libraries.matrix.api.timeline.item.event.ProfileTimelineDetails
+import io.element.android.libraries.matrix.api.timeline.item.event.ProfileDetails
 import io.element.android.libraries.matrix.api.timeline.item.event.SendHandleProvider
 import io.element.android.libraries.matrix.api.timeline.item.event.TimelineItemDebugInfoProvider
 import io.element.android.libraries.matrix.api.timeline.item.event.TimelineItemEventOrigin
@@ -68,7 +69,7 @@ sealed interface TimelineItem {
         val eventId: EventId? = null,
         val transactionId: TransactionId? = null,
         val senderId: UserId,
-        val senderProfile: ProfileTimelineDetails,
+        val senderProfile: ProfileDetails,
         val senderAvatar: AvatarData,
         val content: TimelineItemEventContent,
         val sentTimeMillis: Long = 0L,

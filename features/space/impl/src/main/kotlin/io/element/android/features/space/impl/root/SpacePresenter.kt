@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -25,6 +26,8 @@ import io.element.android.libraries.architecture.AsyncAction
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.core.coroutine.mapState
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
+import io.element.android.libraries.featureflag.api.FeatureFlagService
+import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.toRoomIdOrAlias
@@ -52,6 +55,7 @@ class SpacePresenter(
     private val joinRoom: JoinRoom,
     private val acceptDeclineInvitePresenter: Presenter<AcceptDeclineInviteState>,
     @SessionCoroutineScope private val sessionCoroutineScope: CoroutineScope,
+    private val featureFlagService: FeatureFlagService,
 ) : Presenter<SpaceState> {
     private var children by mutableStateOf<ImmutableList<SpaceRoom>>(persistentListOf())
 
@@ -78,6 +82,10 @@ class SpacePresenter(
             }
         }.collectAsState()
 
+        val isSpaceSettingsEnabled by remember {
+            featureFlagService.isFeatureEnabledFlow(FeatureFlags.SpaceSettings)
+        }.collectAsState(false)
+
         val currentSpace by spaceRoomList.currentSpaceFlow.collectAsState()
         val (joinActions, setJoinActions) = remember { mutableStateOf(emptyMap<RoomId, AsyncAction<Unit>>()) }
 
@@ -93,7 +101,7 @@ class SpacePresenter(
 
         val acceptDeclineInviteState = acceptDeclineInvitePresenter.present()
 
-        fun handleEvents(event: SpaceEvents) {
+        fun handleEvent(event: SpaceEvents) {
             when (event) {
                 SpaceEvents.LoadMore -> localCoroutineScope.paginate()
                 is SpaceEvents.Join -> {
@@ -128,7 +136,8 @@ class SpacePresenter(
             joinActions = joinActions.toImmutableMap(),
             acceptDeclineInviteState = acceptDeclineInviteState,
             topicViewerState = topicViewerState,
-            eventSink = ::handleEvents,
+            canAccessSpaceSettings = isSpaceSettingsEnabled,
+            eventSink = ::handleEvent,
         )
     }
 

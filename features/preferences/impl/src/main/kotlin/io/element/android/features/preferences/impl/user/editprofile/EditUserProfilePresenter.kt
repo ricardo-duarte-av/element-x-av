@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -44,6 +45,7 @@ import timber.log.Timber
 @AssistedInject
 class EditUserProfilePresenter(
     @Assisted private val matrixUser: MatrixUser,
+    @Assisted private val navigator: EditUserProfileNavigator,
     private val matrixClient: MatrixClient,
     private val mediaPickerProvider: PickerProvider,
     private val mediaPreProcessor: MediaPreProcessor,
@@ -56,7 +58,10 @@ class EditUserProfilePresenter(
 
     @AssistedFactory
     interface Factory {
-        fun create(matrixUser: MatrixUser): EditUserProfilePresenter
+        fun create(
+            matrixUser: MatrixUser,
+            navigator: EditUserProfileNavigator,
+        ): EditUserProfilePresenter
     }
 
     @Composable
@@ -100,15 +105,22 @@ class EditUserProfilePresenter(
 
         val saveAction: MutableState<AsyncAction<Unit>> = remember { mutableStateOf(AsyncAction.Uninitialized) }
         val localCoroutineScope = rememberCoroutineScope()
-        fun handleEvents(event: EditUserProfileEvents) {
+
+        val canSave = remember(userDisplayName, userAvatarUri) {
+            val hasProfileChanged = hasDisplayNameChanged(userDisplayName, matrixUser) ||
+                hasAvatarUrlChanged(userAvatarUri, matrixUser)
+            !userDisplayName.isNullOrBlank() && hasProfileChanged
+        }
+
+        fun handleEvent(event: EditUserProfileEvent) {
             when (event) {
-                is EditUserProfileEvents.Save -> localCoroutineScope.saveChanges(
+                is EditUserProfileEvent.Save -> localCoroutineScope.saveChanges(
                     name = userDisplayName,
                     avatarUri = userAvatarUri?.toUri(),
                     currentUser = matrixUser,
                     action = saveAction,
                 )
-                is EditUserProfileEvents.HandleAvatarAction -> {
+                is EditUserProfileEvent.HandleAvatarAction -> {
                     when (event.action) {
                         AvatarAction.ChoosePhoto -> galleryImagePicker.launch()
                         AvatarAction.TakePhoto -> if (cameraPermissionState.permissionGranted) {
@@ -123,16 +135,30 @@ class EditUserProfilePresenter(
                         }
                     }
                 }
-
-                is EditUserProfileEvents.UpdateDisplayName -> userDisplayName = event.name
-                EditUserProfileEvents.CancelSaveChanges -> saveAction.value = AsyncAction.Uninitialized
+                is EditUserProfileEvent.UpdateDisplayName -> userDisplayName = event.name
+                EditUserProfileEvent.Exit -> {
+                    when (saveAction.value) {
+                        is AsyncAction.Confirming -> {
+                            // Close the dialog right now
+                            saveAction.value = AsyncAction.Uninitialized
+                            navigator.close()
+                        }
+                        AsyncAction.Loading -> Unit
+                        is AsyncAction.Failure,
+                        is AsyncAction.Success -> {
+                            // Should not happen
+                        }
+                        AsyncAction.Uninitialized -> {
+                            if (canSave) {
+                                saveAction.value = AsyncAction.ConfirmingCancellation
+                            } else {
+                                navigator.close()
+                            }
+                        }
+                    }
+                }
+                EditUserProfileEvent.CloseDialog -> saveAction.value = AsyncAction.Uninitialized
             }
-        }
-
-        val canSave = remember(userDisplayName, userAvatarUri) {
-            val hasProfileChanged = hasDisplayNameChanged(userDisplayName, matrixUser) ||
-                hasAvatarUrlChanged(userAvatarUri, matrixUser)
-            !userDisplayName.isNullOrBlank() && hasProfileChanged
         }
 
         return EditUserProfileState(
@@ -143,7 +169,7 @@ class EditUserProfilePresenter(
             saveButtonEnabled = canSave && saveAction.value !is AsyncAction.Loading,
             saveAction = saveAction.value,
             cameraPermissionState = cameraPermissionState,
-            eventSink = { handleEvents(it) },
+            eventSink = ::handleEvent,
         )
     }
 

@@ -1,7 +1,8 @@
 /*
- * Copyright 2021-2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2021-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -10,7 +11,6 @@ package io.element.android.libraries.push.impl.notifications
 import android.app.Notification
 import android.graphics.Typeface
 import android.text.style.StyleSpan
-import androidx.annotation.ColorInt
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
 import coil3.ImageLoader
@@ -18,8 +18,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.SessionId
-import io.element.android.libraries.matrix.api.user.MatrixUser
+import io.element.android.libraries.matrix.api.core.ThreadId
 import io.element.android.libraries.push.impl.R
+import io.element.android.libraries.push.impl.notifications.factories.NotificationAccountParams
 import io.element.android.libraries.push.impl.notifications.factories.NotificationCreator
 import io.element.android.libraries.push.impl.notifications.model.FallbackNotifiableEvent
 import io.element.android.libraries.push.impl.notifications.model.InviteNotifiableEvent
@@ -30,39 +31,37 @@ import io.element.android.services.toolbox.api.strings.StringProvider
 interface NotificationDataFactory {
     suspend fun toNotifications(
         messages: List<NotifiableMessageEvent>,
-        currentUser: MatrixUser,
         imageLoader: ImageLoader,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<RoomNotification>
 
     @JvmName("toNotificationInvites")
     @Suppress("INAPPLICABLE_JVM_NAME")
     fun toNotifications(
         invites: List<InviteNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification>
 
     @JvmName("toNotificationSimpleEvents")
     @Suppress("INAPPLICABLE_JVM_NAME")
     fun toNotifications(
         simpleEvents: List<SimpleNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification>
 
     @JvmName("toNotificationFallbackEvents")
     @Suppress("INAPPLICABLE_JVM_NAME")
     fun toNotifications(
         fallback: List<FallbackNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification>
 
     fun createSummaryNotification(
-        currentUser: MatrixUser,
         roomNotifications: List<RoomNotification>,
         invitationNotifications: List<OneShotNotification>,
         simpleNotifications: List<OneShotNotification>,
         fallbackNotifications: List<OneShotNotification>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): SummaryNotification
 }
 
@@ -76,50 +75,54 @@ class DefaultNotificationDataFactory(
 ) : NotificationDataFactory {
     override suspend fun toNotifications(
         messages: List<NotifiableMessageEvent>,
-        currentUser: MatrixUser,
         imageLoader: ImageLoader,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<RoomNotification> {
         val messagesToDisplay = messages.filterNot { it.canNotBeDisplayed() }
             .groupBy { it.roomId }
-        return messagesToDisplay.map { (roomId, events) ->
+        return messagesToDisplay.flatMap { (roomId, events) ->
             val roomName = events.lastOrNull()?.roomName ?: roomId.value
             val isDm = events.lastOrNull()?.roomIsDm ?: false
-            val notification = roomGroupMessageCreator.createRoomMessage(
-                currentUser = currentUser,
-                events = events,
-                roomId = roomId,
-                imageLoader = imageLoader,
-                existingNotification = getExistingNotificationForMessages(currentUser.userId, roomId),
-                color = color,
-            )
-            RoomNotification(
-                notification = notification,
-                roomId = roomId,
-                summaryLine = createRoomMessagesGroupSummaryLine(events, roomName, isDm),
-                messageCount = events.size,
-                latestTimestamp = events.maxOf { it.timestamp },
-                shouldBing = events.any { it.noisy }
-            )
+            val eventsByThreadId = events.groupBy { it.threadId }
+
+            eventsByThreadId.map { (threadId, events) ->
+                val notification = roomGroupMessageCreator.createRoomMessage(
+                    events = events,
+                    roomId = roomId,
+                    threadId = threadId,
+                    imageLoader = imageLoader,
+                    existingNotification = getExistingNotificationForMessages(notificationAccountParams.user.userId, roomId, threadId),
+                    notificationAccountParams = notificationAccountParams,
+                )
+                RoomNotification(
+                    notification = notification,
+                    roomId = roomId,
+                    threadId = threadId,
+                    summaryLine = createRoomMessagesGroupSummaryLine(events, roomName, isDm),
+                    messageCount = events.size,
+                    latestTimestamp = events.maxOf { it.timestamp },
+                    shouldBing = events.any { it.noisy }
+                )
+            }
         }
     }
 
     private fun NotifiableMessageEvent.canNotBeDisplayed() = isRedacted
 
-    private fun getExistingNotificationForMessages(sessionId: SessionId, roomId: RoomId): Notification? {
-        return activeNotificationsProvider.getMessageNotificationsForRoom(sessionId, roomId).firstOrNull()?.notification
+    private fun getExistingNotificationForMessages(sessionId: SessionId, roomId: RoomId, threadId: ThreadId?): Notification? {
+        return activeNotificationsProvider.getMessageNotificationsForRoom(sessionId, roomId, threadId).firstOrNull()?.notification
     }
 
     @JvmName("toNotificationInvites")
     @Suppress("INAPPLICABLE_JVM_NAME")
     override fun toNotifications(
         invites: List<InviteNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification> {
         return invites.map { event ->
             OneShotNotification(
-                key = event.roomId.value,
-                notification = notificationCreator.createRoomInvitationNotification(event, color),
+                tag = event.roomId.value,
+                notification = notificationCreator.createRoomInvitationNotification(notificationAccountParams, event),
                 summaryLine = event.description,
                 isNoisy = event.noisy,
                 timestamp = event.timestamp
@@ -131,12 +134,12 @@ class DefaultNotificationDataFactory(
     @Suppress("INAPPLICABLE_JVM_NAME")
     override fun toNotifications(
         simpleEvents: List<SimpleNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification> {
         return simpleEvents.map { event ->
             OneShotNotification(
-                key = event.eventId.value,
-                notification = notificationCreator.createSimpleEventNotification(event, color),
+                tag = event.eventId.value,
+                notification = notificationCreator.createSimpleEventNotification(notificationAccountParams, event),
                 summaryLine = event.description,
                 isNoisy = event.noisy,
                 timestamp = event.timestamp
@@ -148,12 +151,12 @@ class DefaultNotificationDataFactory(
     @Suppress("INAPPLICABLE_JVM_NAME")
     override fun toNotifications(
         fallback: List<FallbackNotifiableEvent>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): List<OneShotNotification> {
         return fallback.map { event ->
             OneShotNotification(
-                key = event.eventId.value,
-                notification = notificationCreator.createFallbackNotification(event, color),
+                tag = event.eventId.value,
+                notification = notificationCreator.createFallbackNotification(notificationAccountParams, event),
                 summaryLine = event.description.orEmpty(),
                 isNoisy = false,
                 timestamp = event.timestamp
@@ -162,23 +165,21 @@ class DefaultNotificationDataFactory(
     }
 
     override fun createSummaryNotification(
-        currentUser: MatrixUser,
         roomNotifications: List<RoomNotification>,
         invitationNotifications: List<OneShotNotification>,
         simpleNotifications: List<OneShotNotification>,
         fallbackNotifications: List<OneShotNotification>,
-        @ColorInt color: Int,
+        notificationAccountParams: NotificationAccountParams,
     ): SummaryNotification {
         return when {
             roomNotifications.isEmpty() && invitationNotifications.isEmpty() && simpleNotifications.isEmpty() -> SummaryNotification.Removed
             else -> SummaryNotification.Update(
                 summaryGroupMessageCreator.createSummaryNotification(
-                    currentUser = currentUser,
                     roomNotifications = roomNotifications,
                     invitationNotifications = invitationNotifications,
                     simpleNotifications = simpleNotifications,
                     fallbackNotifications = fallbackNotifications,
-                    color = color,
+                    notificationAccountParams = notificationAccountParams,
                 )
             )
         }
@@ -228,6 +229,7 @@ class DefaultNotificationDataFactory(
 data class RoomNotification(
     val notification: Notification,
     val roomId: RoomId,
+    val threadId: ThreadId?,
     val summaryLine: CharSequence,
     val messageCount: Int,
     val latestTimestamp: Long,
@@ -236,6 +238,7 @@ data class RoomNotification(
     fun isDataEqualTo(other: RoomNotification): Boolean {
         return notification == other.notification &&
             roomId == other.roomId &&
+            threadId == other.threadId &&
             summaryLine.toString() == other.summaryLine.toString() &&
             messageCount == other.messageCount &&
             latestTimestamp == other.latestTimestamp &&
@@ -245,7 +248,7 @@ data class RoomNotification(
 
 data class OneShotNotification(
     val notification: Notification,
-    val key: String,
+    val tag: String,
     val summaryLine: CharSequence,
     val isNoisy: Boolean,
     val timestamp: Long,

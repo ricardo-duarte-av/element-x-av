@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -87,6 +88,7 @@ fun SpaceView(
         topBar = {
             SpaceViewTopBar(
                 currentSpace = state.currentSpace,
+                canAccessSpaceSettings = state.canAccessSpaceSettings,
                 onBackClick = onBackClick,
                 onLeaveSpaceClick = onLeaveSpaceClick,
                 onShareSpace = onShareSpace,
@@ -254,6 +256,7 @@ private fun LoadingMoreIndicator(
 @Composable
 private fun SpaceViewTopBar(
     currentSpace: SpaceRoom?,
+    canAccessSpaceSettings: Boolean,
     onBackClick: () -> Unit,
     onLeaveSpaceClick: () -> Unit,
     onDetailsClick: () -> Unit,
@@ -274,8 +277,7 @@ private fun SpaceViewTopBar(
                     avatarData = currentSpace.getAvatarData(AvatarSize.TimelineRoom),
                     modifier = Modifier
                         .clip(roundedCornerShape)
-                        // TODO enable when screen ready for space
-                        .clickable(enabled = false, onClick = onDetailsClick)
+                        .clickable(enabled = canAccessSpaceSettings, onClick = onDetailsClick)
                 )
             }
         },
@@ -328,7 +330,7 @@ private fun SpaceViewTopBar(
                     },
                     text = {
                         Text(
-                            text = stringResource(id = CommonStrings.action_leave),
+                            text = stringResource(id = CommonStrings.action_leave_space),
                             color = ElementTheme.colors.textCriticalPrimary,
                         )
                     },

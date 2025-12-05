@@ -1,7 +1,8 @@
 /*
- * Copyright 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2024, 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -57,8 +58,9 @@ class DefaultShareIntentHandler(
         onPlainText: suspend (String) -> Boolean,
     ): Boolean {
         val type = intent.resolveType(context) ?: return false
+        val uris = getIncomingUris(intent, type)
         return when {
-            type == MimeTypes.PlainText -> handlePlainText(intent, onPlainText)
+            uris.isEmpty() && type == MimeTypes.PlainText -> handlePlainText(intent, onPlainText)
             type.isMimeTypeImage() ||
                 type.isMimeTypeVideo() ||
                 type.isMimeTypeAudio() ||
@@ -66,7 +68,6 @@ class DefaultShareIntentHandler(
                 type.isMimeTypeFile() ||
                 type.isMimeTypeText() ||
                 type.isMimeTypeAny() -> {
-                val uris = getIncomingUris(intent, type)
                 val result = onUris(uris)
                 revokeUriPermissions(uris.map { it.uri })
                 result

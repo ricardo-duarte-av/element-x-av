@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -9,11 +10,11 @@ package io.element.android.libraries.designsystem.components.media
 
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toPersistentList
 
 object WaveFormSamples {
     val allRangeWaveForm = List(100) { it.toFloat() / 100 }.toImmutableList()
 
+    @Suppress("ktlint:standard:argument-list-wrapping")
     val realisticWaveForm = persistentListOf(
         0.000f, 0.000f, 0.000f, 0.003f, 0.354f,
         0.353f, 0.365f, 0.790f, 0.787f, 0.167f,
@@ -25,5 +26,5 @@ object WaveFormSamples {
         0.000f, 0.003f,
     )
 
-    val longRealisticWaveForm = List(4) { realisticWaveForm }.flatten().toPersistentList()
+    val longRealisticWaveForm = List(4) { realisticWaveForm }.flatten().toImmutableList()
 }

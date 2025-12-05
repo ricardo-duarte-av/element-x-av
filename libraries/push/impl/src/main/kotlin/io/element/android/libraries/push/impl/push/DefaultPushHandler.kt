@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -183,9 +184,9 @@ class DefaultPushHandler(
                     }
                 }
 
-                // Process redactions of messages
+                // Process redactions of messages in background to not block operations with higher priority
                 if (redactions.isNotEmpty()) {
-                    onRedactedEventReceived.onRedactedEventsReceived(redactions)
+                    appCoroutineScope.launch { onRedactedEventReceived.onRedactedEventsReceived(redactions) }
                 }
 
                 // Find and process ringing call notifications separately

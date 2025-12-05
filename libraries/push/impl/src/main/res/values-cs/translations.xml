@@ -15,6 +15,7 @@
     <item quantity="few">"%d oznámení"</item>
     <item quantity="other">"%d oznámení"</item>
   </plurals>
+  <string name="notification_error_unified_push_unregistered_android">"Distributor oznámení UnifiedPush se nepodařilo zaregistrovat, takže již nebudete dostávat oznámení. Zkontrolujte nastavení oznámení v aplikaci a stav distributora push oznámění."</string>
   <string name="notification_fallback_content">"Oznámení"</string>
   <string name="notification_incoming_call">"📹 Příchozí hovor"</string>
   <string name="notification_inline_reply_failed">"** Nepodařilo se odeslat - otevřete prosím místnost"</string>
@@ -42,6 +43,7 @@
   <string name="notification_sender_me">"Já"</string>
   <string name="notification_sender_mention_reply">"%1$s zmínil(a) nebo odpověděl(a)"</string>
   <string name="notification_test_push_notification_content">"Prohlížíte si oznámení! Klikněte na mě!"</string>
+  <string name="notification_thread_in_room">"Vlákno v %1$s"</string>
   <string name="notification_ticker_text_dm">"%1$s: %2$s"</string>
   <string name="notification_ticker_text_group">"%1$s: %2$s %3$s"</string>
   <plurals name="notification_unread_notified_messages">

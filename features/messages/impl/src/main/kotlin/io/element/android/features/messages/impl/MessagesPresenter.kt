@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -33,9 +34,10 @@ import io.element.android.features.messages.impl.actionlist.ActionListState
 import io.element.android.features.messages.impl.actionlist.model.TimelineItemAction
 import io.element.android.features.messages.impl.crypto.identity.IdentityChangeState
 import io.element.android.features.messages.impl.link.LinkState
-import io.element.android.features.messages.impl.messagecomposer.MessageComposerEvents
+import io.element.android.features.messages.impl.messagecomposer.MessageComposerEvent
 import io.element.android.features.messages.impl.messagecomposer.MessageComposerState
 import io.element.android.features.messages.impl.pinned.banner.PinnedMessagesBannerState
+import io.element.android.features.messages.impl.timeline.MarkAsFullyRead
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.timeline.TimelineEvents
 import io.element.android.features.messages.impl.timeline.TimelineState
@@ -65,13 +67,13 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarDispatcher
 import io.element.android.libraries.designsystem.utils.snackbar.SnackbarMessage
 import io.element.android.libraries.designsystem.utils.snackbar.collectSnackbarMessageAsState
+import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.featureflag.api.FeatureFlags
 import io.element.android.libraries.matrix.api.core.toThreadId
 import io.element.android.libraries.matrix.api.encryption.EncryptionService
 import io.element.android.libraries.matrix.api.encryption.identity.IdentityState
 import io.element.android.libraries.matrix.api.permalink.PermalinkParser
-import io.element.android.libraries.matrix.api.recentemojis.AddRecentEmoji
 import io.element.android.libraries.matrix.api.room.JoinedRoom
 import io.element.android.libraries.matrix.api.room.MessageEventType
 import io.element.android.libraries.matrix.api.room.RoomInfo
@@ -85,6 +87,7 @@ import io.element.android.libraries.matrix.api.timeline.item.event.EventOrTransa
 import io.element.android.libraries.matrix.ui.messages.reply.map
 import io.element.android.libraries.matrix.ui.model.getAvatarData
 import io.element.android.libraries.matrix.ui.room.getDirectRoomMember
+import io.element.android.libraries.recentemojis.api.AddRecentEmoji
 import io.element.android.libraries.textcomposer.model.MessageComposerMode
 import io.element.android.libraries.ui.strings.CommonStrings
 import io.element.android.services.analytics.api.AnalyticsService
@@ -93,6 +96,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 @AssistedInject
 class MessagesPresenter(
@@ -122,6 +126,8 @@ class MessagesPresenter(
     private val encryptionService: EncryptionService,
     private val featureFlagService: FeatureFlagService,
     private val addRecentEmoji: AddRecentEmoji,
+    private val markAsFullyRead: MarkAsFullyRead,
+    @SessionCoroutineScope private val sessionCoroutineScope: CoroutineScope,
 ) : Presenter<MessagesState> {
     @AssistedFactory
     interface Factory {
@@ -138,10 +144,13 @@ class MessagesPresenter(
         timelineMode = timelineController.mainTimelineMode()
     )
 
+    private val markingAsReadAndExiting = AtomicBoolean(false)
+
     @Composable
     override fun present(): MessagesState {
         htmlConverterProvider.Update()
 
+        val coroutineScope = rememberCoroutineScope()
         val roomInfo by room.roomInfoFlow.collectAsState()
         val localCoroutineScope = rememberCoroutineScope()
         val composerState = composerPresenter.present()
@@ -213,7 +222,7 @@ class MessagesPresenter(
             onPauseOrDispose {}
         }
 
-        fun handleEvents(event: MessagesEvents) {
+        fun handleEvent(event: MessagesEvents) {
             when (event) {
                 is MessagesEvents.HandleAction -> {
                     localCoroutineScope.handleTimelineAction(
@@ -238,6 +247,22 @@ class MessagesPresenter(
                 is MessagesEvents.Dismiss -> actionListState.eventSink(ActionListEvents.Clear)
                 is MessagesEvents.OnUserClicked -> {
                     roomMemberModerationState.eventSink(RoomMemberModerationEvents.ShowActionsForUser(event.user))
+                }
+                is MessagesEvents.MarkAsFullyReadAndExit -> coroutineScope.launch {
+                    if (!markingAsReadAndExiting.getAndSet(true)) {
+                        val latestEventId = room.liveTimeline.getLatestEventId().getOrElse {
+                            Timber.w(it, "Failed to get latest event id to mark as fully read")
+                            navigator.close()
+                            return@launch
+                        }
+                        latestEventId?.let { eventId ->
+                            sessionCoroutineScope.launch {
+                                markAsFullyRead(room.roomId, eventId)
+                            }
+                        }
+                        navigator.close()
+                        markingAsReadAndExiting.set(false)
+                    }
                 }
             }
         }
@@ -267,8 +292,9 @@ class MessagesPresenter(
             pinnedMessagesBannerState = pinnedMessagesBannerState,
             dmUserVerificationState = dmUserVerificationState,
             roomMemberModerationState = roomMemberModerationState,
-            successorRoom = roomInfo.successorRoom
-        ) { handleEvents(it) }
+            successorRoom = roomInfo.successorRoom,
+            eventSink = ::handleEvent,
+        )
     }
 
     @Composable
@@ -331,7 +357,7 @@ class MessagesPresenter(
                         is TimelineItemThreadInfo.ThreadResponse -> targetEvent.threadInfo.threadRootId
                         is TimelineItemThreadInfo.ThreadRoot, null -> targetEvent.eventId?.toThreadId()
                     } ?: return@launch
-                    navigator.onOpenThread(threadId, null)
+                    navigator.navigateToThread(threadId, null)
                 } else {
                     handleActionReply(targetEvent, composerState, timelineProtectionState)
                 }
@@ -439,7 +465,7 @@ class MessagesPresenter(
         when (targetEvent.content) {
             is TimelineItemPollContent -> {
                 if (targetEvent.eventId == null) return
-                navigator.onEditPollClick(targetEvent.eventId)
+                navigator.navigateToEditPoll(targetEvent.eventId)
             }
             else -> {
                 val composerMode = MessageComposerMode.Edit(
@@ -453,7 +479,7 @@ class MessagesPresenter(
                     }.orEmpty(),
                 )
                 composerState.eventSink(
-                    MessageComposerEvents.SetMode(composerMode)
+                    MessageComposerEvent.SetMode(composerMode)
                 )
             }
         }
@@ -468,7 +494,7 @@ class MessagesPresenter(
             content = "",
         )
         composerState.eventSink(
-            MessageComposerEvents.SetMode(composerMode)
+            MessageComposerEvent.SetMode(composerMode)
         )
     }
 
@@ -481,7 +507,7 @@ class MessagesPresenter(
             content = (targetEvent.content as? TimelineItemEventContentWithAttachment)?.caption.orEmpty(),
         )
         composerState.eventSink(
-            MessageComposerEvents.SetMode(composerMode)
+            MessageComposerEvent.SetMode(composerMode)
         )
     }
 
@@ -498,23 +524,23 @@ class MessagesPresenter(
                 hideImage = timelineProtectionState.hideMediaContent(targetEvent.eventId),
             )
             composerState.eventSink(
-                MessageComposerEvents.SetMode(composerMode)
+                MessageComposerEvent.SetMode(composerMode)
             )
         }
     }
 
     private fun handleShowDebugInfoAction(event: TimelineItem.Event) {
-        navigator.onShowEventDebugInfoClick(event.eventId, event.debugInfo)
+        navigator.navigateToEventDebugInfo(event.eventId, event.debugInfo)
     }
 
     private fun handleForwardAction(event: TimelineItem.Event) {
         if (event.eventId == null) return
-        navigator.onForwardEventClick(event.eventId)
+        navigator.forwardEvent(event.eventId)
     }
 
     private fun handleReportAction(event: TimelineItem.Event) {
         if (event.eventId == null) return
-        navigator.onReportContentClick(event.eventId, event.senderId)
+        navigator.navigateToReportMessage(event.eventId, event.senderId)
     }
 
     private fun handleEndPollAction(

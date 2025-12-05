@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2025 Element Creations Ltd.
  * Copyright 2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -21,6 +22,7 @@ import io.element.android.features.networkmonitor.api.NetworkStatus
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.di.annotations.ApplicationContext
+import io.element.android.libraries.matrix.api.auth.SessionRestorationException
 import io.element.android.libraries.matrix.api.core.SessionId
 import io.element.android.libraries.push.api.push.NotificationEventRequest
 import io.element.android.libraries.push.api.push.SyncOnNotifiableEvent
@@ -62,9 +64,9 @@ class FetchNotificationsWorker(
             return@withContext Result.retry()
         }
 
-        val failedSyncForSessions = mutableSetOf<SessionId>()
+        val failedSyncForSessions = mutableMapOf<SessionId, Throwable>()
 
-        val groupedRequests = requests.groupBy { it.sessionId }
+        val groupedRequests = requests.groupBy { it.sessionId }.toMutableMap()
         for ((sessionId, notificationRequests) in groupedRequests) {
             Timber.d("Processing notification requests for session $sessionId")
             eventResolver.resolveEvents(sessionId, notificationRequests)
@@ -74,7 +76,7 @@ class FetchNotificationsWorker(
                         (queue.results as MutableSharedFlow).emit(requests to result)
                     },
                     onFailure = {
-                        failedSyncForSessions += sessionId
+                        failedSyncForSessions[sessionId] = it
                         Timber.e(it, "Failed to resolve notification events for session $sessionId")
                     }
                 )
@@ -82,7 +84,13 @@ class FetchNotificationsWorker(
 
         // If there were failures for whole sessions, we retry all their requests
         if (failedSyncForSessions.isNotEmpty()) {
-            for (failedSessionId in failedSyncForSessions) {
+            @Suppress("LoopWithTooManyJumpStatements")
+            for ((failedSessionId, exception) in failedSyncForSessions) {
+                if (exception.cause is SessionRestorationException) {
+                    Timber.e(exception, "Session $failedSessionId could not be restored, not retrying notification fetching")
+                    groupedRequests.remove(failedSessionId)
+                    continue
+                }
                 val requestsToRetry = groupedRequests[failedSessionId] ?: continue
                 Timber.d("Re-scheduling ${requestsToRetry.size} failed notification requests for session $failedSessionId")
                 workManagerScheduler.submit(

@@ -1,7 +1,8 @@
 /*
- * Copyright 2023, 2024 New Vector Ltd.
+ * Copyright (c) 2025 Element Creations Ltd.
+ * Copyright 2023-2025 New Vector Ltd.
  *
- * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial.
  * Please see LICENSE files in the repository root for full details.
  */
 
@@ -18,15 +19,22 @@ import im.vector.app.features.analytics.plan.UserProperties
 import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.sessionstorage.api.observer.SessionListener
 import io.element.android.libraries.sessionstorage.api.observer.SessionObserver
+import io.element.android.services.analytics.api.AnalyticsLongRunningTransaction
+import io.element.android.services.analytics.api.AnalyticsSdkManager
+import io.element.android.services.analytics.api.AnalyticsSdkSpan
 import io.element.android.services.analytics.api.AnalyticsService
+import io.element.android.services.analytics.api.NoopAnalyticsSdkSpan
+import io.element.android.services.analytics.api.NoopAnalyticsTransaction
 import io.element.android.services.analytics.impl.log.analyticsTag
 import io.element.android.services.analytics.impl.store.AnalyticsStore
 import io.element.android.services.analyticsproviders.api.AnalyticsProvider
+import io.element.android.services.analyticsproviders.api.AnalyticsTransaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 @SingleIn(AppScope::class)
@@ -34,11 +42,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 class DefaultAnalyticsService(
     private val analyticsProviders: Set<@JvmSuppressWildcards AnalyticsProvider>,
     private val analyticsStore: AnalyticsStore,
-//    private val lateInitUserPropertiesFactory: LateInitUserPropertiesFactory,
-    @AppCoroutineScope
-    private val coroutineScope: CoroutineScope,
+    @AppCoroutineScope private val coroutineScope: CoroutineScope,
     private val sessionObserver: SessionObserver,
+    private val analyticsSdkManager: AnalyticsSdkManager,
 ) : AnalyticsService, SessionListener {
+    private val pendingLongRunningTransactions = ConcurrentHashMap<AnalyticsLongRunningTransaction, AnalyticsTransaction>()
+
     // Cache for the store values
     private val userConsent = AtomicBoolean(false)
 
@@ -61,6 +70,7 @@ class DefaultAnalyticsService(
     override suspend fun setUserConsent(userConsent: Boolean) {
         Timber.tag(analyticsTag.value).d("setUserConsent($userConsent)")
         analyticsStore.setUserConsent(userConsent)
+        analyticsSdkManager.enableSdkAnalytics(enabled = userConsent)
     }
 
     override suspend fun setDidAskUserConsent() {
@@ -77,6 +87,7 @@ class DefaultAnalyticsService(
         // Delete the store when the last session is deleted
         if (wasLastSession) {
             analyticsStore.reset()
+            analyticsSdkManager.enableSdkAnalytics(false)
         }
     }
 
@@ -135,6 +146,45 @@ class DefaultAnalyticsService(
     override fun trackError(throwable: Throwable) {
         if (userConsent.get()) {
             analyticsProviders.onEach { it.trackError(throwable) }
+        }
+    }
+
+    override fun startTransaction(name: String, operation: String?): AnalyticsTransaction {
+        return if (userConsent.get()) {
+            analyticsProviders.firstNotNullOfOrNull { it.startTransaction(name, operation) }
+        } else {
+            null
+        } ?: NoopAnalyticsTransaction
+    }
+
+    override fun startLongRunningTransaction(
+        longRunningTransaction: AnalyticsLongRunningTransaction,
+        parentTransaction: AnalyticsTransaction?,
+    ): AnalyticsTransaction {
+        val transaction = parentTransaction?.startChild(longRunningTransaction.name, longRunningTransaction.operation)
+            ?: startTransaction(longRunningTransaction.name, longRunningTransaction.operation)
+
+        pendingLongRunningTransactions[longRunningTransaction] = transaction
+        return transaction
+    }
+
+    override fun getLongRunningTransaction(longRunningTransaction: AnalyticsLongRunningTransaction): AnalyticsTransaction? {
+        return pendingLongRunningTransactions[longRunningTransaction]
+    }
+
+    override fun removeLongRunningTransaction(longRunningTransaction: AnalyticsLongRunningTransaction): AnalyticsTransaction? {
+        return pendingLongRunningTransactions.remove(longRunningTransaction)
+    }
+
+    override fun enterSdkSpan(name: String?, parentTraceId: String?): AnalyticsSdkSpan {
+        return if (userConsent.get()) {
+             if (name != null) {
+                analyticsSdkManager.startSpan(name, parentTraceId)
+            } else {
+                analyticsSdkManager.bridge(parentTraceId)
+            }.apply { enter() }
+        } else {
+            NoopAnalyticsSdkSpan
         }
     }
 }
