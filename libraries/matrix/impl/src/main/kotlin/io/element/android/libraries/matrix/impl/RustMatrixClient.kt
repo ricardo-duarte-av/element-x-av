@@ -12,11 +12,13 @@ import io.element.android.libraries.androidutils.file.getSizeOfFiles
 import io.element.android.libraries.core.bool.orFalse
 import io.element.android.libraries.core.coroutine.CoroutineDispatchers
 import io.element.android.libraries.core.coroutine.childScope
+import io.element.android.libraries.core.data.bytes
 import io.element.android.libraries.core.data.tryOrNull
 import io.element.android.libraries.core.extensions.mapFailure
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.matrix.api.MatrixClient
+import io.element.android.libraries.matrix.api.analytics.SdkStoreSizes
 import io.element.android.libraries.matrix.api.core.DeviceId
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomAlias
@@ -25,6 +27,8 @@ import io.element.android.libraries.matrix.api.core.RoomIdOrAlias
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.createroom.CreateRoomParameters
 import io.element.android.libraries.matrix.api.createroom.RoomPreset
+import io.element.android.libraries.matrix.api.linknewdevice.LinkDesktopHandler
+import io.element.android.libraries.matrix.api.linknewdevice.LinkMobileHandler
 import io.element.android.libraries.matrix.api.media.MatrixMediaLoader
 import io.element.android.libraries.matrix.api.oidc.AccountManagementAction
 import io.element.android.libraries.matrix.api.room.BaseRoom
@@ -45,6 +49,9 @@ import io.element.android.libraries.matrix.api.user.MatrixSearchUserResults
 import io.element.android.libraries.matrix.api.user.MatrixUser
 import io.element.android.libraries.matrix.impl.encryption.RustEncryptionService
 import io.element.android.libraries.matrix.impl.exception.mapClientException
+import io.element.android.libraries.matrix.impl.linknewdevice.RustLinkDesktopHandler
+import io.element.android.libraries.matrix.impl.linknewdevice.RustLinkMobileHandler
+import io.element.android.libraries.matrix.impl.linknewdevice.RustQrCodeDataParser
 import io.element.android.libraries.matrix.impl.mapper.map
 import io.element.android.libraries.matrix.impl.media.RustMediaLoader
 import io.element.android.libraries.matrix.impl.media.RustMediaPreviewService
@@ -566,6 +573,17 @@ class RustMatrixClient(
         return getCacheSize(includeCryptoDb = false)
     }
 
+    override suspend fun getDatabaseSizes(): Result<SdkStoreSizes> = runCatchingExceptions {
+        innerClient.getStoreSizes().run {
+            SdkStoreSizes(
+                stateStore = stateStore?.bytes,
+                eventCacheStore = eventCacheStore?.bytes,
+                mediaStore = mediaStore?.bytes,
+                cryptoStore = cryptoStore?.bytes,
+            )
+        }
+    }
+
     override suspend fun clearCache() {
         innerClient.clearCaches(innerSyncService)
         destroy()
@@ -723,6 +741,35 @@ class RustMatrixClient(
     override suspend fun getRecentEmojis(): Result<List<String>> = withContext(sessionDispatcher) {
         runCatchingExceptions {
             innerClient.getRecentEmojis().map { it.emoji }
+        }
+    }
+
+    override suspend fun canLinkNewDevice(): Result<Boolean> = withContext(sessionDispatcher) {
+        runCatchingExceptions {
+            innerClient.isLoginWithQrCodeSupported()
+        }
+    }
+
+    override fun createLinkMobileHandler(): Result<LinkMobileHandler> {
+        return runCatchingExceptions {
+            val handler = innerClient.newGrantLoginWithQrCodeHandler()
+            RustLinkMobileHandler(
+                inner = handler,
+                sessionCoroutineScope = sessionCoroutineScope,
+                sessionDispatcher = sessionDispatcher,
+            )
+        }
+    }
+
+    override fun createLinkDesktopHandler(): Result<LinkDesktopHandler> {
+        return runCatchingExceptions {
+            val handler = innerClient.newGrantLoginWithQrCodeHandler()
+            RustLinkDesktopHandler(
+                inner = handler,
+                sessionCoroutineScope = sessionCoroutineScope,
+                sessionDispatcher = sessionDispatcher,
+                qrCodeDataParser = RustQrCodeDataParser(),
+            )
         }
     }
 
