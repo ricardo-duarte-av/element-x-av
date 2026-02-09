@@ -8,7 +8,7 @@ android_gradle_plugin = "8.13.2"
 kotlin = "2.3.10"
 kotlinpoet = "2.2.0"
 ksp = "2.3.5"
-firebaseAppDistribution = "5.2.0"
+firebaseAppDistribution = "5.2.1"
 
 # AndroidX
 core = "1.17.0"
@@ -78,7 +78,7 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin
 kover_gradle_plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
 ksp_gradle_plugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 # https://firebase.google.com/docs/android/setup#available-libraries
-google_firebase_bom = "com.google.firebase:firebase-bom:34.8.0"
+google_firebase_bom = "com.google.firebase:firebase-bom:34.9.0"
 firebase_appdistribution_gradle = { module = "com.google.firebase:firebase-appdistribution-gradle", version.ref = "firebaseAppDistribution" }
 autonomousapps_dependencyanalysis_plugin = { module = "com.autonomousapps:dependency-analysis-gradle-plugin", version.ref = "dependencyAnalysis" }
 ksp_plugin = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
@@ -219,7 +219,7 @@ color_picker = "io.mhssn:colorpicker:1.0.0"
 
 # Analytics
 posthog = "com.posthog:posthog-android:3.31.0"
-sentry = "io.sentry:sentry-android:8.31.0"
+sentry = "io.sentry:sentry-android:8.32.0"
 # main branch can be tested replacing the version with main-SNAPSHOT
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.29.2"
 
