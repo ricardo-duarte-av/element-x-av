@@ -200,7 +200,7 @@ sqldelight-driver-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 sqlcipher = "net.zetetic:sqlcipher-android:4.13.0"
 sqlite = "androidx.sqlite:sqlite-ktx:2.6.2"
-unifiedpush = "org.unifiedpush.android:connector:3.2.0"
+unifiedpush = "org.unifiedpush.android:connector:3.3.1"
 vanniktech_blurhash = "com.vanniktech:blurhash:0.3.0"
 telephoto_zoomableimage = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "telephoto" }
 telephoto_flick = { module = "me.saket.telephoto:flick-android", version.ref = "telephoto" }
@@ -209,7 +209,7 @@ maplibre = "org.maplibre.gl:android-sdk:12.3.1"
 maplibre_ktx = "org.maplibre.gl:android-sdk-ktx-v7:3.0.2"
 maplibre_annotation = "org.maplibre.gl:android-plugin-annotation-v9:3.0.2"
 opusencoder = "io.element.android:opusencoder:1.2.0"
-zxing_cpp = "io.github.zxing-cpp:android:2.3.0"
+zxing_cpp = "io.github.zxing-cpp:android:3.0.2"
 google_zxing = "com.google.zxing:core:3.5.4"
 
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
@@ -217,7 +217,7 @@ haze_materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = 
 color_picker = "io.mhssn:colorpicker:1.0.0"
 
 # Analytics
-posthog = "com.posthog:posthog-android:3.32.0"
+posthog = "com.posthog:posthog-android:3.32.2"
 sentry = "io.sentry:sentry-android:8.33.0"
 # main branch can be tested replacing the version with main-SNAPSHOT
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.29.2"
