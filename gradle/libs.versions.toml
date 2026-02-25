@@ -54,7 +54,7 @@ haze = "1.7.2"
 dependencyAnalysis = "3.5.1"
 
 # DI
-metro = "0.10.4"
+metro = "0.11.0"
 
 # Auto service
 autoservice = "1.1.1"
@@ -219,7 +219,7 @@ haze_materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = 
 color_picker = "io.mhssn:colorpicker:1.0.0"
 
 # Analytics
-posthog = "com.posthog:posthog-android:3.32.2"
+posthog = "com.posthog:posthog-android:3.34.0"
 sentry = "io.sentry:sentry-android:8.33.0"
 # main branch can be tested replacing the version with main-SNAPSHOT
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.29.2"
