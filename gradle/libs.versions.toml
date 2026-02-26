@@ -39,7 +39,7 @@ datetime = "0.7.1"
 serialization_json = "1.10.0"
 
 #other
-coil = "3.3.0"
+coil = "3.4.0"
 # Rollback to 1.0.4, 1.0.5 has this issue: https://github.com/airbnb/Showkase/issues/420
 showkase = "1.0.5"
 # There is some custom logic in `RootFlowNode` that may break because it reuses some Appyx internal APIs.
@@ -51,10 +51,10 @@ telephoto = "0.18.0"
 haze = "1.7.2"
 
 # Dependency analysis
-dependencyAnalysis = "3.5.1"
+dependencyAnalysis = "3.6.0"
 
 # DI
-metro = "0.11.0"
+metro = "0.11.1"
 
 # Auto service
 autoservice = "1.1.1"
@@ -120,7 +120,7 @@ androidx_preference = "androidx.preference:preference:1.2.1"
 androidx_webkit = "androidx.webkit:webkit:1.15.0"
 
 androidx_compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose_bom" }
-androidx_compose_material3 = { module = "androidx.compose.material3:material3" }
+androidx_compose_material3 = { module = "androidx.compose.material3:material3", version = '1.5.0-alpha11' }
 androidx_compose_material3_windowsizeclass = { module = "androidx.compose.material3:material3-window-size-class" }
 androidx_compose_material3_adaptive = "androidx.compose.material3:material3-adaptive-android:1.0.0-alpha06"
 androidx_compose_ui = { module = "androidx.compose.ui:ui" }
@@ -219,7 +219,7 @@ haze_materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = 
 color_picker = "io.mhssn:colorpicker:1.0.0"
 
 # Analytics
-posthog = "com.posthog:posthog-android:3.34.0"
+posthog = "com.posthog:posthog-android:3.34.2"
 sentry = "io.sentry:sentry-android:8.33.0"
 # main branch can be tested replacing the version with main-SNAPSHOT
 matrix_analytics_events = "com.github.matrix-org:matrix-analytics-events:0.29.2"
@@ -232,7 +232,7 @@ sigpwned_emoji4j = "com.sigpwned:emoji4j-core:16.0.0"
 metro_runtime = { module = "dev.zacsweers.metro:runtime", version.ref = "metro" }
 
 # Element Call
-element_call_embedded = "io.element.android:element-call-embedded:0.16.3"
+element_call_embedded = "io.element.android:element-call-embedded:0.17.0"
 
 # Auto services
 google_autoservice = { module = "com.google.auto.service:auto-service", version.ref = "autoservice" }
